@@ -6,8 +6,12 @@ Portal 2 fan port for the Nintendo ds
 
 ## Building
 Requires [BlocksDS](https://blocksds.skylyrac.net/docs/) to build.
+Requires some [Portal 2](https://store.steampowered.com/app/620/Portal_2) files.
 
-Simply run
+### Linux
+Copy `[Portal 2]/scripts/vscripts/` to `[PortalDS]/assets/scripts/vscripts/`
+
+Then run
 ```shell
 cd ./libs/squirrel
 cmake --fresh -DCMAKE_TOOLCHAIN_FILE=/opt/blocksds/core/cmake/BlocksDS.cmake -DDISABLE_DYNAMIC=ON -DSQ_DISABLE_INTERPRETER=ON ./CMakeLists.txt 

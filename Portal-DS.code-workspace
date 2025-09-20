@@ -13,7 +13,8 @@
 			"math.h": "c",
 			"trig_lut.h": "c",
 			"black_wall_metal_002c_pal_bin.h": "c",
-			"black_floor_metal_001c_tex_bin.h": "c"
+			"black_floor_metal_001c_tex_bin.h": "c",
+			"cstdio": "c"
 		}
 	}
 }

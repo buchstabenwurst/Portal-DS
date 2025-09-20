@@ -1,5 +1,6 @@
 #include <NEMain.h>
 #include <math.h>
+#include <squirrel.h>
 #include "physics.h"
 #include "main.h"
 #include "load.h"
@@ -124,23 +125,6 @@ bool intersects(hitbox* box1, hitbox* box2)
     return 1;
 }
 
-void addHitbox(Vector3 size, Vector3* position, Vector3* rotation, bool isDynamic) {
-    if (!isDynamic) {
-        level.allHitboxes[level.currentHitbox].position = *position;
-        level.allHitboxes[level.currentHitbox].rotation = *rotation;
-    }
-    else {
-        level.allHitboxes[level.currentHitbox].attachedPosition = position;
-        level.allHitboxes[level.currentHitbox].attachedRotation = rotation;
-        level.dynamicHitbxes[level.currentDynamicHitbox] = level.currentHitbox;
-        level.currentDynamicHitbox++;
-    }
-    level.allHitboxes[level.currentHitbox].sizeX = size.x / 2;
-    level.allHitboxes[level.currentHitbox].sizeY = size.y / 2;
-    level.allHitboxes[level.currentHitbox].sizeZ = size.z / 2;
-    level.allHitboxes[level.currentHitbox].isDynamic = isDynamic;
-    level.currentHitbox++;
-}
 // unused
 bool linePlaneIntersection(Vector3* contact, Vector3 ray, Vector3 rayOrigin,
     Vector3 normal, Vector3 coord) {
@@ -243,6 +227,7 @@ Vector3 getNearest(Vector3 pos1, Vector3 pos2, Vector3 pos3, bool* pos3Nearest) 
     }
 }
 
+// Note: shooting a portal on a trigger crashes the game
 bool setPlayerPortalPosition(PLAYER player, hitbox* hitbox, bool portal) {
     Vector3 pos;
     Vector3 tmpPos;
@@ -329,10 +314,35 @@ void doCollisions(void) {
             if (level.dynamicHitbxes[i] == j)
                 continue;
             //if too far away, skip
-            if (getDistance(level.allHitboxes[i].vertex[0], level.allHitboxes[j].vertex[0]) > 500)
+            if (getDistance(level.allHitboxes[level.dynamicHitbxes[i]].position, level.allHitboxes[j].position) > 200)
                 continue;
             if (intersects(&level.allHitboxes[level.dynamicHitbxes[i]], &level.allHitboxes[j])) {
-                //printf("\x1b[15;2Hamogus");
+                //printf("amogus");
+                if(level.allHitboxes[j].isTrigger){
+                    if(level.allHitboxes[j].attachedTrigger->input){
+                        char script[64];
+                        char function[64];
+                        char command[32];
+                        sscanf(level.allHitboxes[j].attachedTrigger->input, "%[^\x1B]\x1B%[^\x1B]", script, command); // "%[^\x1B]" is used like %s but the file format uses wierd seperators
+                        if(strcmp(command, "RunScriptCode") == 0){
+                            if(level.allHitboxes[j].attachedTrigger->mode == 1 && !level.allHitboxes[j].attachedTrigger->alreadyTriggered){ // if trigger_once & not already triggred
+                                sscanf(level.allHitboxes[j].attachedTrigger->input, "%*[^\x1B]\x1B%*[^\x1B]\x1B%[^\x1B]", function);
+                                function[strlen(function) - 2] = '\0'; // remove the "()"
+                                if(strcmp(function, "OnPostTransition") == 0){
+                                printf("calling funcion: %s\n", function);
+                                callSquirrel(squirrelvm, function);
+                                level.allHitboxes[j].attachedTrigger->alreadyTriggered = true;
+                                }
+                            }
+                            
+                        }
+                        if(level.allHitboxes[j].attachedTrigger->mode == 1 && !level.allHitboxes[j].attachedTrigger->alreadyTriggered){ // if trigger_once & not already triggred
+                            printf("calling funcion: %s\n", level.allHitboxes[j].attachedTrigger->input);
+                            level.allHitboxes[j].attachedTrigger->alreadyTriggered = true;
+                            // TODO: call function
+                        }
+                    }
+                }
             }
 
 
@@ -340,52 +350,77 @@ void doCollisions(void) {
     }
 }
 
+void calculateCollisionVertecies(hitbox* hitbox){
+    hitbox->position = *hitbox->attachedPosition; // update position
+    hitbox->rotation = *hitbox->attachedRotation; // update rotation
+
+    float tmpSinY = fixedToFloat(sinLerp(floatToFixed((hitbox->rotation.y + 45) / 45, 12)), 12);
+    float tmpCosY = fixedToFloat(cosLerp(floatToFixed((hitbox->rotation.y + 45) / 45, 12)), 12);
+
+    for (int j = 0; j < 8; j++)
+        hitbox->vertex[j] = hitbox->position;
+
+    hitbox->vertex[0].x += hitbox->sizeX * tmpSinY;
+    hitbox->vertex[0].y += hitbox->sizeY * tmpCosY;
+    hitbox->vertex[0].z += hitbox->sizeZ;
+
+    hitbox->vertex[1].x += hitbox->sizeX * tmpCosY;
+    hitbox->vertex[1].y -= hitbox->sizeY * tmpSinY;
+    hitbox->vertex[1].z += hitbox->sizeZ;
+
+    hitbox->vertex[2].x -= hitbox->sizeX * tmpSinY;
+    hitbox->vertex[2].y -= hitbox->sizeY * tmpCosY;
+    hitbox->vertex[2].z += hitbox->sizeZ;
+    
+    hitbox->vertex[3].x -= hitbox->sizeX * tmpCosY;
+    hitbox->vertex[3].y += hitbox->sizeY * tmpSinY;
+    hitbox->vertex[3].z += hitbox->sizeZ;
+
+
+    hitbox->vertex[4].x -= hitbox->sizeX * tmpCosY;
+    hitbox->vertex[4].y += hitbox->sizeY * tmpSinY;
+    hitbox->vertex[4].z -= hitbox->sizeZ;
+
+    hitbox->vertex[5].x -= hitbox->sizeX * tmpSinY;
+    hitbox->vertex[5].y -= hitbox->sizeY * tmpCosY;
+    hitbox->vertex[5].z -= hitbox->sizeZ;
+
+    hitbox->vertex[6].x += hitbox->sizeX * tmpCosY;
+    hitbox->vertex[6].y -= hitbox->sizeY * tmpSinY;
+    hitbox->vertex[6].z -= hitbox->sizeZ;
+
+    hitbox->vertex[7].x += hitbox->sizeX * tmpSinY;
+    hitbox->vertex[7].y += hitbox->sizeY * tmpCosY;
+    hitbox->vertex[7].z -= hitbox->sizeZ;
+}
+
 void updateCollisions(void) {
     for (int i = 0; i < level.currentDynamicHitbox; i++) {
-        hitbox* tmpHitbox = &level.allHitboxes[level.dynamicHitbxes[i]];
-        tmpHitbox->position = *tmpHitbox->attachedPosition; // update position
-        tmpHitbox->rotation = *tmpHitbox->attachedRotation; // update rotation
-
-        float tmpSinY = fixedToFloat(sinLerp(floatToFixed((tmpHitbox->rotation.y + 45) / 45, 12)), 12);
-        float tmpCosY = fixedToFloat(cosLerp(floatToFixed((tmpHitbox->rotation.y + 45) / 45, 12)), 12);
-
-        for (int j = 0; j < 8; j++)
-            tmpHitbox->vertex[j] = tmpHitbox->position;
-
-        tmpHitbox->vertex[0].x += tmpHitbox->sizeX * tmpSinY;
-        tmpHitbox->vertex[0].y += tmpHitbox->sizeY * tmpCosY;
-        tmpHitbox->vertex[0].z += tmpHitbox->sizeZ;
-
-        tmpHitbox->vertex[1].x += tmpHitbox->sizeX * tmpCosY;
-        tmpHitbox->vertex[1].y -= tmpHitbox->sizeY * tmpSinY;
-        tmpHitbox->vertex[1].z += tmpHitbox->sizeZ;
-
-        tmpHitbox->vertex[2].x -= tmpHitbox->sizeX * tmpSinY;
-        tmpHitbox->vertex[2].y -= tmpHitbox->sizeY * tmpCosY;
-        tmpHitbox->vertex[2].z += tmpHitbox->sizeZ;
-        
-        tmpHitbox->vertex[3].x -= tmpHitbox->sizeX * tmpCosY;
-        tmpHitbox->vertex[3].y += tmpHitbox->sizeY * tmpSinY;
-        tmpHitbox->vertex[3].z += tmpHitbox->sizeZ;
-
-
-        tmpHitbox->vertex[4].x -= tmpHitbox->sizeX * tmpCosY;
-        tmpHitbox->vertex[4].y += tmpHitbox->sizeY * tmpSinY;
-        tmpHitbox->vertex[4].z -= tmpHitbox->sizeZ;
-
-        tmpHitbox->vertex[5].x -= tmpHitbox->sizeX * tmpSinY;
-        tmpHitbox->vertex[5].y -= tmpHitbox->sizeY * tmpCosY;
-        tmpHitbox->vertex[5].z -= tmpHitbox->sizeZ;
-
-        tmpHitbox->vertex[6].x += tmpHitbox->sizeX * tmpCosY;
-        tmpHitbox->vertex[6].y -= tmpHitbox->sizeY * tmpSinY;
-        tmpHitbox->vertex[6].z -= tmpHitbox->sizeZ;
-
-        tmpHitbox->vertex[7].x += tmpHitbox->sizeX * tmpSinY;
-        tmpHitbox->vertex[7].y += tmpHitbox->sizeY * tmpCosY;
-        tmpHitbox->vertex[7].z -= tmpHitbox->sizeZ;
-        
+        calculateCollisionVertecies(&level.allHitboxes[level.dynamicHitbxes[i]]);
     }
+}
+
+void addHitbox(Vector3 size, Vector3* position, Vector3* rotation, bool isDynamic) {
+    level.allHitboxes[level.currentHitbox].sizeX = size.x / 2;
+    level.allHitboxes[level.currentHitbox].sizeY = size.y / 2;
+    level.allHitboxes[level.currentHitbox].sizeZ = size.z / 2;
+    level.allHitboxes[level.currentHitbox].isDynamic = isDynamic;
+    if (!isDynamic) {
+        level.allHitboxes[level.currentHitbox].position = *position;
+        level.allHitboxes[level.currentHitbox].rotation = *rotation;
+
+        level.allHitboxes[level.currentHitbox].attachedPosition = &level.allHitboxes[level.currentHitbox].position;
+        level.allHitboxes[level.currentHitbox].attachedRotation = &level.allHitboxes[level.currentHitbox].rotation;
+
+        calculateCollisionVertecies(&level.allHitboxes[level.currentHitbox]);
+    }
+    else {
+        level.allHitboxes[level.currentHitbox].attachedPosition = position;
+        level.allHitboxes[level.currentHitbox].attachedRotation = rotation;
+        level.dynamicHitbxes[level.currentDynamicHitbox] = level.currentHitbox;
+        level.currentDynamicHitbox++;
+    }
+    level.currentHitbox++;
 }
 
 PLAYER playerPhysics(PLAYER player){

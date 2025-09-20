@@ -212,9 +212,10 @@ void RenderDebug(void)
         localPlayer.position.x, localPlayer.position.y, localPlayer.position.z, localPlayer.rotation.x, localPlayer.rotation.y, localPlayer.rotation.z, localPlayer.lookVector.x, localPlayer.lookVector.y, localPlayer.lookVector.z);
     }
     if (debugVision) {
-        NE_PolyFormat(0, 1, NE_LIGHT_0, NE_CULL_NONE, 0);
+        NE_PolyFormat(31, 1, NE_LIGHT_0, NE_CULL_NONE, 0);
         for (int i = 0; i < level.currentHitbox; i++) {
             NE_PolyBegin(GL_QUAD);
+            NE_MaterialUse(debugempty);
             // top and bottom
             for (int j = 0; j < 8; j++) {
                 NE_PolyVertexI(floatToFixed(level.allHitboxes[i].vertex[j].x, LEVEL_RENDER_SIZE), floatToFixed(level.allHitboxes[i].vertex[j].z, LEVEL_RENDER_SIZE), floatToFixed(level.allHitboxes[i].vertex[j].y, LEVEL_RENDER_SIZE));

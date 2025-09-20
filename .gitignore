@@ -377,3 +377,6 @@ FodyWeavers.xsd
 *.mdl
 *.vtx
 *.blend1
+assets/Maps/sp_a2_triple_laser.bsp
+assets/scripts/vscripts/sp_elevator_motifs.nut
+assets/scripts/vscripts/sp_transition_list.nut

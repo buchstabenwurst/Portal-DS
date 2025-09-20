@@ -8,7 +8,7 @@
 
 #define BSP_USE_LESS_MEMORY
 
-#define MAX_PLANES 800
+#define MAX_PLANES 200
 #define MAX_HITBOXES 120
 #define PLAYER_HIGHT 64 * LEVEL_SIZE //space below the camera
 #define PLAYER_HIGHT_TOP 2 * LEVEL_SIZE //space above the camera
@@ -63,6 +63,20 @@ typedef struct
 
 typedef struct
 {
+	char* input;
+	int mode; // 0 = continuous, 1 = trigger_once
+	bool alreadyTriggered;
+}trigger;
+
+typedef struct
+{
+	Vector3 position;
+	Vector3 rotation;
+	char* target;
+}pointTeleport;
+
+typedef struct
+{
 	Vector3 vertex[8];
 	Vector3 vector[3];
 	float sizeX;
@@ -74,7 +88,9 @@ typedef struct
 	Vector3* attachedRotation; // Rotation for dynamic hitboxes
 	bool isDynamic; //if the hitbox can't move
 	bool isPlane; // it is only a Plane
+	bool isTrigger;
 	PLANE* attachedPlane; // The plane it belongs to
+	trigger* attachedTrigger; // The trigger it belongs to
 } hitbox;
 
 typedef struct
@@ -98,6 +114,11 @@ typedef struct
 	PortaledPlane portaledPlane;
 } Portal;
 
+typedef struct
+{
+	char* name;
+	void* child;
+} Entity;
 
 typedef struct
 {
@@ -107,20 +128,23 @@ typedef struct
 	int planeCount;
 	hitbox allHitboxes[MAX_HITBOXES];
 	int currentHitbox;
-	int dynamicHitbxes[10]; // Wich hitboxes are Dynamic
+	int dynamicHitbxes[20]; // Wich hitboxes are Dynamic
 	int currentDynamicHitbox;
+	Entity entities[100];
+	int currentEntity;
 } Level;
 
 typedef struct
 {
-	char* name; //Player Name
 	Vector3 position; //Player Position (x,y,z)
 	Vector3 rotation; //Player Rotaion (x,y,z)
+	hitbox hitbox;
+	PHYSICS physics;
+	char* name; //Player Name
 	Vector3 lookVector; // vector in witch direction the player is looking
 	bool isJumping;
-	PHYSICS physics;
-	hitbox hitbox;
 } PLAYER;
+
 
 extern int textureMode;
 extern int sensitivityHorizontal;
@@ -137,5 +161,6 @@ extern Keyboard *keyboard;
 
 // Call a Squirrel (ingame script language) function
 int callSquirrel(HSQUIRRELVM vm, const char* function);
+void registerEntity(char* name, void* entity);
 
 #endif

@@ -492,6 +492,7 @@ int loadLevelBsp(char* levelName) {
     fseek(levelFile, header.lumps[LUMP_VERTEXES].fileofs, SEEK_SET);
     fread(&vertexLump, header.lumps[LUMP_VERTEXES].filelen, 1, levelFile);
     // every face
+    
     for (int face = 0; face < MAX_PLANES; face++)
     {
 
@@ -541,7 +542,7 @@ int loadLevelBsp(char* levelName) {
             fgetpos(levelFile, &fpos);
             // go to the position value
             fsetpos(levelFile, &fStartPos);
-            for (int timeout = 0; timeout < 30; timeout++)
+            while(strcmp(word, "}"))
             {
                 fscanf(levelFile, "%s", word);
                 if(strcmp(word, "\"origin\"") == 0){
@@ -554,13 +555,13 @@ int loadLevelBsp(char* levelName) {
             float tmpx, tmpy, tmpz;
             fscanf(levelFile, "%f %f %f", &tmpx, &tmpy, &tmpz);
             // Set the player positon
-            // localPlayer.position.x = tmpx;
-            // localPlayer.position.y = tmpy;
-            // localPlayer.position.z = tmpz;
+            localPlayer.position.x = tmpx;
+            localPlayer.position.y = tmpy;
+            localPlayer.position.z = tmpz;
 
-            localPlayer.position.x = -3000;
-            localPlayer.position.y = -1000;
-            localPlayer.position.z = 100;
+            // localPlayer.position.x = -3000;
+            // localPlayer.position.y = -1000;
+            // localPlayer.position.z = 100;
             // Read worldspawn
             Vector3 playerStartPosition;
             Vector3 playerStartRotation;
@@ -572,11 +573,12 @@ int loadLevelBsp(char* levelName) {
             char model[64];
             int modelIndex;
             Vector3 position;
+            char input[64];
             // remember current cursor position
             fgetpos(levelFile, &fpos);
             // go to the position value
             fsetpos(levelFile, &fStartPos);
-            for (int timeout = 0; timeout < 30; timeout++)
+            while(strcmp(word, "}"))
             {
                 fscanf(levelFile, "%s", word);
                 if(strcmp(word, "\"model\"") == 0){
@@ -596,6 +598,14 @@ int loadLevelBsp(char* levelName) {
                     fseek(levelFile, 1, SEEK_CUR);
                     fscanf(levelFile, "%f %f %f", &position.x, &position.y, &position.z);
                 }
+                if(strcmp(word, "\"OnStartTouch\"") == 0){
+                    fseek(levelFile, 1, SEEK_CUR);
+                    fscanf(levelFile, "%[^\"]", &input);
+                    printf("%s\n",input);
+                    break;
+
+                }
+                // printf("%s",word);
             }
             // printf("trigger_once:\n%f\n%f\n%f\n", position.x, position.y, position.z);
             // printf("trigger_once:\n%d\n", modelIndex);
@@ -604,12 +614,71 @@ int loadLevelBsp(char* levelName) {
                 .y = modelLump[modelIndex].maxs.y - modelLump[modelIndex].mins.y,
                 .z = modelLump[modelIndex].maxs.z - modelLump[modelIndex].mins.z
             };
-            Vector3 rotation;
+            Vector3 rotation = {
+                .x = 0,
+                .y = 0,
+                .z = 0,
+            };
+            // printf("trigger_once:\n%f\n%f\n%f\n", size.x, size.y, size.z);
+            //  position.x = 256;
+            //  position.y = 0;
+            //  position.z = 0;
             addHitbox(size,&position, &rotation, false);
-            // go to where we left off
-            fsetpos(levelFile, &fpos);
+            level.allHitboxes[level.currentHitbox].attachedTrigger = malloc(sizeof(trigger));
+            level.allHitboxes[level.currentHitbox].attachedTrigger->input = (char*)malloc(strlen(input) * sizeof(char));
+            strcpy(level.allHitboxes[level.currentHitbox].attachedTrigger->input, input);
+            
+            level.allHitboxes[level.currentHitbox].isTrigger = true;
+            level.allHitboxes[level.currentHitbox].attachedTrigger->mode = 1; // set mode to trigger_once
+            level.allHitboxes[level.currentHitbox].attachedTrigger->alreadyTriggered = false;
 
-        }
+            registerEntity("trigger_once", level.allHitboxes[level.currentHitbox].attachedTrigger);
+
+            //printf("\n\n%s\n%s\n\n\n", level.allHitboxes[level.currentHitbox].attachedTrigger->input, input);
+            // printf("%d", level.currentHitbox);
+            // go to where we left off
+            // fsetpos(levelFile, &fpos);
+
+        } 
+        // if (strcmp(word, "\"point_teleport\"") == 0){ // Read point_teleport
+        //     // remember current cursor position
+        //     fgetpos(levelFile, &fpos);
+        //     // go to the position value
+        //     fsetpos(levelFile, &fStartPos);
+        //     Vector3 position, rotation;
+        //     char name[64], target[32];
+        //     while(strcmp(word, "}"))
+        //     {
+        //         fscanf(levelFile, "%s", word);
+        //         if(strcmp(word, "\"origin\"") == 0){
+        //             fseek(levelFile, 1, SEEK_CUR);
+        //             fscanf(levelFile, "%f %f %f", &position.x, &position.y, &position.z);
+        //         }else
+        //         if(strcmp(word, "\"targetname\"") == 0){
+        //             fseek(levelFile, 1, SEEK_CUR);
+        //             fscanf(levelFile, "%[^\"]", &name);
+        //         }else
+        //         // if(strcmp(word, "\"target\"") == 0){
+        //         //     fseek(levelFile, 1, SEEK_CUR);
+        //         //     fscanf(levelFile, "%[^\"]", &target);
+        //         // }else
+        //         if(strcmp(word, "\"angles\"") == 0){
+        //             fseek(levelFile, 1, SEEK_CUR);
+        //             fscanf(levelFile, "%f %f %f", &rotation.x, &rotation.y, &rotation.z);
+        //         }
+        //     }
+            
+        //     pointTeleport* entity = malloc(sizeof(pointTeleport));
+        //     entity->position = position;
+        //     entity->rotation = rotation;
+        //     char* namePermanent = malloc(sizeof(char) * strlen(name));
+        //     strcpy(namePermanent, name);
+        //     // printf("\n\n%s\n\n\n",name);
+        //     registerEntity(namePermanent, entity);
+            
+        //     // go to where we left off
+        //     fsetpos(levelFile, &fpos);
+        // }
     }
     
 

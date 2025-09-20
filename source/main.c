@@ -34,7 +34,7 @@ int sensitivityVertical = 140;
 
 bool isConsoleOpen = false;
 bool debugText = false;
-bool debugVision = false;
+bool debugVision = true;
 
 HSQUIRRELVM squirrelvm;
 Level level;
@@ -55,6 +55,45 @@ void addCube(Vector3 position) {
     lastCube++;
 }
 
+void registerEntity(char* name, void* entity){
+    level.entities[level.currentEntity].name = name;
+    level.entities[level.currentEntity].child = entity;
+    level.currentEntity++;
+}
+
+SQInteger getMapName(HSQUIRRELVM v){
+    // printf("[GetMapName] %s\n", level.name);
+    sq_pushstring(v, level.name, -1); //push the map name as return value
+    return 1; //1 because 1 value is returned
+}
+
+int findEntityByName(char* name, Entity* entity){
+    for(int i=0; i<level.currentEntity; i++){
+        printf("%s\n", level.entities[i].name);
+        if(strcmp(level.entities[i].name, name) == 0){
+            *entity = level.entities[i];
+            return 1;
+        }
+    }
+    
+	return 0;
+}
+
+SQInteger entFire(HSQUIRRELVM v){
+    // char* entityName, char* Thing1, int delay, int Thing
+    const SQChar* entityName, Thing1;
+    SQInteger delay, Thing;
+    sq_getstring(v, 2, &entityName);
+    
+    Entity entity;
+	if(findEntityByName(entityName, &entity)){
+		printf("[EntFire] found %s.\n", entityName);
+	}else{
+		printf("[EntFire] %s not found :(.\n", entityName);
+	}
+    return 0;
+}
+
 #include <stdarg.h>
 void printfunc(HSQUIRRELVM SQ_UNUSED_ARG(v),const SQChar *s,...)
 {
@@ -72,6 +111,15 @@ void errorfunc(HSQUIRRELVM SQ_UNUSED_ARG(v),const SQChar *s,...)
     va_end(vl);
 }
 
+SQInteger register_global_func(HSQUIRRELVM v,SQFUNCTION f,const char *fname)
+{
+    sq_pushroottable(v);
+    sq_pushstring(v,fname,-1);
+    sq_newclosure(v,f,0); //create a new function
+    sq_newslot(v,-3,SQFalse);
+    sq_pop(v,1); //pops the root table
+    return 0;
+}
 
 // Call a Squirrel (ingame script language) function
 int callSquirrel(HSQUIRRELVM vm, const char* function){
@@ -144,10 +192,17 @@ int main(void)
     
     //do some stuff with squirrel here
     sq_setprintfunc(squirrelvm, printfunc, errorfunc);
+
+    // register c functions
+    register_global_func(squirrelvm, getMapName, "GetMapName");
+    register_global_func(squirrelvm, entFire, "EntFire");
+
     sqstd_dofile(squirrelvm, "nitro:/scripts/vscripts/hello.nut", false, true);
+    sqstd_dofile(squirrelvm, "nitro:/scripts/vscripts/sp_transition_list.nut", false, true);
     
     callSquirrel(squirrelvm, "hi");
-
+	
+    // entFire("player", "destroy", 0, 0);
 
     mkdir("/_nds", 0777);
     mkdir("/_nds/PortalDS", 0777);
@@ -159,8 +214,8 @@ int main(void)
     NE_LightSet(1, NE_Blue, -1, -1, 0);
 
     // Background
-    NE_ClearColorSet(NE_White, 31, 63);
-
+    NE_ClearColorSet(NE_Black, 31, 63);
+    ToggleConsole();
 
     int fpscount = 0;
     // This is used to see if second has changed
@@ -176,6 +231,9 @@ int main(void)
     save();
     // loadLevelVmf("test_map");
     loadLevelBsp("test_map");
+    // localPlayer.position.x = 0;
+    // localPlayer.position.y = 0;
+    localPlayer.position.z += 250;
     LoadMisc();
 
     int freemem = NE_TextureFreeMemPercent();
@@ -204,7 +262,9 @@ int main(void)
 
 
         //printf("\x1b[2;20HVram left:%d", freemem);
-
+        
+        // printf("\x1b[3;1HPos: x:%.2f y:%.2f z:%.2f\x1b[4;1HRot: x:%.2f y:%.2f z:%.2f\n", 
+        // level.allHitboxes[6].position.x, level.allHitboxes[6].position.y, level.allHitboxes[6].position.z, level.allHitboxes[0].position.x, level.allHitboxes[0].position.y, level.allHitboxes[0].position.z);
         cubes[0].rotation.y += 2;
 
         //Camera
