@@ -13,6 +13,7 @@
 #include <dirent.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include <time.h>
 #include <squirrel.h>
 #include <sqstdio.h>
@@ -43,6 +44,16 @@ Cube cubes[10];
 int lastCube = 0;
 Keyboard *keyboard;
 
+void printfWarning(const char* message, ...){
+    va_list args;
+    
+    printf("\x1b[33;1m"); // make terminal color yellow
+    va_start(args, message);
+    vprintf(message, args);
+    va_end(args);
+    printf("\x1b[37;1m"); // reset terminal color to white
+}
+
 void addCube(Vector3 position) {
     cubes[lastCube].position = position;
 
@@ -69,7 +80,7 @@ SQInteger getMapName(HSQUIRRELVM v){
 
 int findEntityByName(char* name, Entity* entity){
     for(int i=0; i<level.currentEntity; i++){
-        printf("%s\n", level.entities[i].name);
+        // printf("%s\n", level.entities[i].name);
         if(strcmp(level.entities[i].name, name) == 0){
             *entity = level.entities[i];
             return 1;
@@ -89,7 +100,7 @@ SQInteger entFire(HSQUIRRELVM v){
 	if(findEntityByName(entityName, &entity)){
 		printf("[EntFire] found %s.\n", entityName);
 	}else{
-		printf("[EntFire] %s not found :(.\n", entityName);
+		printfWarning("[EntFire] Warning %s not found :(.\n", entityName);
 	}
     return 0;
 }
