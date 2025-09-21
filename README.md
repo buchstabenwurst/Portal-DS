@@ -9,6 +9,8 @@ Requires [BlocksDS](https://blocksds.skylyrac.net/docs/) to build.
 Requires some [Portal 2](https://store.steampowered.com/app/620/Portal_2) files.
 
 ### Linux
+clone with submodules `git clone --recurse-submodules https://github.com/buchstabenwurst/Portal-DS`
+
 Copy `[Portal 2]/scripts/vscripts/` to `[PortalDS]/assets/scripts/vscripts/`
 
 Then run
