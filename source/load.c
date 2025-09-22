@@ -573,7 +573,7 @@ int loadLevelBsp(char* levelName) {
             char model[64];
             int modelIndex;
             Vector3 position;
-            char input[64];
+            char name[64], input[64];
             // remember current cursor position
             fgetpos(levelFile, &fpos);
             // go to the position value
@@ -598,6 +598,10 @@ int loadLevelBsp(char* levelName) {
                     fseek(levelFile, 1, SEEK_CUR);
                     fscanf(levelFile, "%f %f %f", &position.x, &position.y, &position.z);
                 }
+                if(strcmp(word, "\"targetname\"") == 0){
+                    fseek(levelFile, 1, SEEK_CUR);
+                    fscanf(levelFile, "%[^\"]", &name);
+                }else
                 if(strcmp(word, "\"OnStartTouch\"") == 0){
                     fseek(levelFile, 1, SEEK_CUR);
                     fscanf(levelFile, "%[^\"]", &input);
@@ -632,7 +636,7 @@ int loadLevelBsp(char* levelName) {
             level.allHitboxes[level.currentHitbox].attachedTrigger->mode = 1; // set mode to trigger_once
             level.allHitboxes[level.currentHitbox].attachedTrigger->alreadyTriggered = false;
 
-            registerEntity("trigger_once", level.allHitboxes[level.currentHitbox].attachedTrigger);
+            registerEntity("trigger_once", name, level.allHitboxes[level.currentHitbox].attachedTrigger);
 
             //printf("\n\n%s\n%s\n\n\n", level.allHitboxes[level.currentHitbox].attachedTrigger->input, input);
             // printf("%d", level.currentHitbox);
@@ -640,45 +644,50 @@ int loadLevelBsp(char* levelName) {
             // fsetpos(levelFile, &fpos);
 
         } 
-        // if (strcmp(word, "\"point_teleport\"") == 0){ // Read point_teleport
-        //     // remember current cursor position
-        //     fgetpos(levelFile, &fpos);
-        //     // go to the position value
-        //     fsetpos(levelFile, &fStartPos);
-        //     Vector3 position, rotation;
-        //     char name[64], target[32];
-        //     while(strcmp(word, "}"))
-        //     {
-        //         fscanf(levelFile, "%s", word);
-        //         if(strcmp(word, "\"origin\"") == 0){
-        //             fseek(levelFile, 1, SEEK_CUR);
-        //             fscanf(levelFile, "%f %f %f", &position.x, &position.y, &position.z);
-        //         }else
-        //         if(strcmp(word, "\"targetname\"") == 0){
-        //             fseek(levelFile, 1, SEEK_CUR);
-        //             fscanf(levelFile, "%[^\"]", &name);
-        //         }else
-        //         // if(strcmp(word, "\"target\"") == 0){
-        //         //     fseek(levelFile, 1, SEEK_CUR);
-        //         //     fscanf(levelFile, "%[^\"]", &target);
-        //         // }else
-        //         if(strcmp(word, "\"angles\"") == 0){
-        //             fseek(levelFile, 1, SEEK_CUR);
-        //             fscanf(levelFile, "%f %f %f", &rotation.x, &rotation.y, &rotation.z);
-        //         }
-        //     }
+        if (strcmp(word, "\"point_teleport\"") == 0){ // Read point_teleport
+            // remember current cursor position
+            fgetpos(levelFile, &fpos);
+            // go to the position value
+            fsetpos(levelFile, &fStartPos);
+            Vector3 position, rotation;
+            char name[64], target[32];
+            while(strcmp(word, "}"))
+            {
+                fscanf(levelFile, "%s", word);
+                if(strcmp(word, "\"origin\"") == 0){
+                    fseek(levelFile, 1, SEEK_CUR);
+                    fscanf(levelFile, "%f %f %f", &position.x, &position.y, &position.z);
+                }else
+                if(strcmp(word, "\"targetname\"") == 0){
+                    fseek(levelFile, 1, SEEK_CUR);
+                    fscanf(levelFile, "%[^\"]", &name);
+                }else
+                if(strcmp(word, "\"target\"") == 0){
+                    fseek(levelFile, 1, SEEK_CUR);
+                    fscanf(levelFile, "%[^\"]", &target);
+                }else
+                if(strcmp(word, "\"angles\"") == 0){
+                    fseek(levelFile, 1, SEEK_CUR);
+                    fscanf(levelFile, "%f %f %f", &rotation.x, &rotation.y, &rotation.z);
+                }
+            }
             
-        //     pointTeleport* entity = malloc(sizeof(pointTeleport));
-        //     entity->position = position;
-        //     entity->rotation = rotation;
-        //     char* namePermanent = malloc(sizeof(char) * strlen(name));
-        //     strcpy(namePermanent, name);
-        //     // printf("\n\n%s\n\n\n",name);
-        //     registerEntity(namePermanent, entity);
+            char* namePermanent = malloc(sizeof(char) * strlen(name));
+            strcpy(namePermanent, name);
+            char* targetPermanent = malloc(sizeof(char) * strlen(target));
+            strcpy(targetPermanent, target);
+
+            pointTeleport* entity = malloc(sizeof(pointTeleport));
+            entity->position = position;
+            entity->rotation = rotation;
+            entity->target = targetPermanent;
+            // printf("\n\n%s\n\n\n",name);
+            // printf("\n\n%s\n\n\n",target);
+            registerEntity("point_teleport", namePermanent, entity);
             
-        //     // go to where we left off
-        //     fsetpos(levelFile, &fpos);
-        // }
+            // go to where we left off
+            fsetpos(levelFile, &fpos);
+        }
     }
     
 

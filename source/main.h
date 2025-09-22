@@ -116,7 +116,8 @@ typedef struct
 
 typedef struct
 {
-	char* name;
+	char* className;
+	char* targetName;
 	void* child;
 } Entity;
 
@@ -161,6 +162,6 @@ extern Keyboard *keyboard;
 
 // Call a Squirrel (ingame script language) function
 int callSquirrel(HSQUIRRELVM vm, const char* function);
-void registerEntity(char* name, void* entity);
+void registerEntity(char* className, char* targetName, void* entity);
 
 #endif

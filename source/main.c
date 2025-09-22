@@ -54,6 +54,11 @@ void printfWarning(const char* message, ...){
     printf("\x1b[37;1m"); // reset terminal color to white
 }
 
+void teleport(PLAYER* player, Vector3 position, Vector3 rotation){
+    player->position = position;
+    player->rotation = rotation;
+}
+
 void addCube(Vector3 position) {
     cubes[lastCube].position = position;
 
@@ -66,8 +71,9 @@ void addCube(Vector3 position) {
     lastCube++;
 }
 
-void registerEntity(char* name, void* entity){
-    level.entities[level.currentEntity].name = name;
+void registerEntity(char* className, char* targetName, void* entity){
+    level.entities[level.currentEntity].className = className;
+    level.entities[level.currentEntity].targetName = targetName;
     level.entities[level.currentEntity].child = entity;
     level.currentEntity++;
 }
@@ -81,7 +87,7 @@ SQInteger getMapName(HSQUIRRELVM v){
 int findEntityByName(char* name, Entity* entity){
     for(int i=0; i<level.currentEntity; i++){
         // printf("%s\n", level.entities[i].name);
-        if(strcmp(level.entities[i].name, name) == 0){
+        if(strcmp(level.entities[i].targetName, name) == 0){
             *entity = level.entities[i];
             return 1;
         }
@@ -91,21 +97,26 @@ int findEntityByName(char* name, Entity* entity){
 }
 
 SQInteger entFire(HSQUIRRELVM v){
-    // char* entityName, char* Thing1, int delay, int Thing
-    const SQChar* entityName, Thing1;
-    SQInteger delay, Thing;
+    // char* entityName, char* action, int optionalParameter, int delay
+    const SQChar* entityName, *action;
+    SQInteger delay, optionalParameter;
     sq_getstring(v, 2, &entityName);
-    
+    sq_getstring(v, 3, &action);
+
     Entity entity;
 	if(findEntityByName(entityName, &entity)){
 		printf("[EntFire] found %s.\n", entityName);
+        if(strcmp(entity.className, "point_teleport") == 0){
+            pointTeleport* teleportEntity = entity.child;
+            if(strcmp(action, "Teleport") == 0)
+                teleport(&localPlayer, teleportEntity->position, teleportEntity->rotation);
+        }
 	}else{
 		printfWarning("[EntFire] Warning %s not found :(.\n", entityName);
 	}
     return 0;
 }
 
-#include <stdarg.h>
 void printfunc(HSQUIRRELVM SQ_UNUSED_ARG(v),const SQChar *s,...)
 {
     va_list vl;
