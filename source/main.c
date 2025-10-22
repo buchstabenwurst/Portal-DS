@@ -44,6 +44,13 @@ Cube cubes[10];
 int lastCube = 0;
 Keyboard *keyboard;
 
+int max(int __arg1, int __arg2) {
+  return (__arg1 > __arg2) ? __arg1 : __arg2;
+}
+int min(int __arg1, int __arg2) {
+  return (__arg1 < __arg2) ? __arg1 : __arg2;
+}
+
 void printfWarning(const char* message, ...){
     va_list args;
     
@@ -252,13 +259,13 @@ int main(void)
 
     save();
     // loadLevelVmf("test_map");
-    loadLevelBsp("test_map");
-    // localPlayer.position.x = 0;
-    // localPlayer.position.y = 0;
-    localPlayer.position.z += 250;
     LoadMisc();
+    loadLevelBsp("test_map");
+    localPlayer.position.x = 0;
+    localPlayer.position.y = 0;
+    localPlayer.position.z += 250;
 
-    int freemem = NE_TextureFreeMemPercent();
+    // int freemem = NE_TextureFreeMemPercent();
     Vector3 position;
     position.z = 120;
     position.x = 80;

@@ -486,28 +486,158 @@ int loadLevelBsp(char* levelName) {
     fseek(levelFile, header.lumps[LUMP_EDGES].fileofs, SEEK_SET);
     fread(&edgeLump, header.lumps[LUMP_EDGES].filelen, 1, levelFile);
 
+    // Read surfEdges
+    int* surfedgeLump = malloc(header.lumps[LUMP_SURFEDGES].filelen);
+    fseek(levelFile, header.lumps[LUMP_SURFEDGES].fileofs, SEEK_SET);
+    fread(surfedgeLump, header.lumps[LUMP_SURFEDGES].filelen, 1, levelFile);
+
     // Read vertecies
     struct dvertex_t vertexLump[header.lumps[LUMP_VERTEXES].filelen / sizeof(struct dvertex_t)];
     // struct dvertex_t vertexLump[MAX_MAP_VERTS];
     fseek(levelFile, header.lumps[LUMP_VERTEXES].fileofs, SEEK_SET);
     fread(&vertexLump, header.lumps[LUMP_VERTEXES].filelen, 1, levelFile);
+
+
+    // Read textureinfo
+    struct texinfo_s texinfoLump[header.lumps[LUMP_TEXINFO].filelen / sizeof(struct texinfo_s)];
+    // struct texinfo_s texinfoLump[MAX_MAP_TEXINFO];
+    fseek(levelFile, header.lumps[LUMP_TEXINFO].fileofs, SEEK_SET);
+    fread(&texinfoLump, header.lumps[LUMP_TEXINFO].filelen, 1, levelFile);
+
+    // Read texturedata
+    struct dtexdata_t texdataLump[header.lumps[LUMP_TEXDATA].filelen / sizeof(struct dtexdata_t)];
+    // struct dtexdata_t texdataLump[MAX_MAP_TEXDATA];
+    fseek(levelFile, header.lumps[LUMP_TEXDATA].fileofs, SEEK_SET);
+    fread(&texdataLump, header.lumps[LUMP_TEXDATA].filelen, 1, levelFile);
+
+    // Read texture name table
+    int* texdataStringTable = malloc(header.lumps[LUMP_TEXDATA_STRING_TABLE].filelen);
+    // struct dtexdata_t texdataLump[MAX_MAP_TEXDATA];
+    fseek(levelFile, header.lumps[LUMP_TEXDATA_STRING_TABLE].fileofs, SEEK_SET);
+    fread(texdataStringTable, header.lumps[LUMP_TEXDATA_STRING_TABLE].filelen, 1, levelFile);
+
+    // Read texture name strings
+    char* texdataStrings = malloc(header.lumps[LUMP_TEXDATA_STRING_DATA].filelen);
+    // struct dtexdata_t texdataLump[MAX_MAP_TEXDATA];
+    fseek(levelFile, header.lumps[LUMP_TEXDATA_STRING_DATA].fileofs, SEEK_SET);
+    fread(texdataStrings, header.lumps[LUMP_TEXDATA_STRING_DATA].filelen, 1, levelFile);
+
+
     // every face
-    
-    for (int face = 0; face < MAX_PLANES; face++)
+
+    // TODO: PLEASE PLEASE PLEASE rework the face loading PLEASE! this one is awful
+    int planesToLoad = min(header.lumps[LUMP_FACES].filelen / sizeof(struct dface_t), MAX_PLANES);
+    // face=plane in level file; plane=plane ingame(excluded nodraw)
+    int plane = 0;
+    for (int face = 0; face < planesToLoad + (planesToLoad-plane); face++)
     {
 
-        Vector3* tmpvertex[faceLump[face].numedges];
-        for (int n = 0; n < faceLump[face].numedges; n++)
-        {
-            tmpvertex[n] = &vertexLump[edgeLump[faceLump[face].firstedge + n].v[0]].point;
+        // Vector3* tmpvertex[faceLump[face].numedges];
+        // for (int n = 0; n <= faceLump[face].numedges; n++)
+        // {
+        //     tmpvertex[n] = &vertexLump[edgeLump[abs(surfedgeLump[faceLump[face].firstedge + n])].v[0]].point;
+        // }
+        // level.Plane[plane].vertex1 = *tmpvertex[0];
+        // level.Plane[plane].vertex2 = *tmpvertex[1];
+        // level.Plane[plane].vertex3 = *tmpvertex[2];
+        // level.Plane[plane].vertex4 = *tmpvertex[3];
+        
+        // printf("%d",faceLump[face].side);
+        // if(faceLump[face].side){
+            
+        // }else{
+        // }
+
+        if(surfedgeLump[faceLump[face].firstedge + 0] > 0){
+            level.Plane[plane].vertex1 = vertexLump[edgeLump[abs(surfedgeLump[faceLump[face].firstedge + 0])].v[0]].point;
+            level.Plane[plane].vertex2 = vertexLump[edgeLump[abs(surfedgeLump[faceLump[face].firstedge + 0])].v[1]].point;
+        }else{
+            level.Plane[plane].vertex1 = vertexLump[edgeLump[abs(surfedgeLump[faceLump[face].firstedge + 0])].v[1]].point;
+            level.Plane[plane].vertex2 = vertexLump[edgeLump[abs(surfedgeLump[faceLump[face].firstedge + 0])].v[0]].point;
+        }
+        
+        if(surfedgeLump[faceLump[face].firstedge + 2] > 0){
+            level.Plane[plane].vertex3 = vertexLump[edgeLump[abs(surfedgeLump[faceLump[face].firstedge + 2])].v[0]].point;
+            level.Plane[plane].vertex4 = vertexLump[edgeLump[abs(surfedgeLump[faceLump[face].firstedge + 2])].v[1]].point;
+        }else{
+            level.Plane[plane].vertex3 = vertexLump[edgeLump[abs(surfedgeLump[faceLump[face].firstedge + 2])].v[1]].point;
+            level.Plane[plane].vertex4 = vertexLump[edgeLump[abs(surfedgeLump[faceLump[face].firstedge + 2])].v[0]].point;
         }
 
-        level.Plane[face].vertex1 = *tmpvertex[0];
-        level.Plane[face].vertex2 = *tmpvertex[1];
-        level.Plane[face].vertex3 = *tmpvertex[2];
-        level.Plane[face].vertex4 = *tmpvertex[3];
-        level.Plane[face].isDrawn = true;
+        level.Plane[plane].isDrawn = true;
+        // printf("%d\n",faceLump[200].firstedge);
+        if(faceLump[face].firstedge == faceLump[300].firstedge){
+            level.Plane[plane].isDrawn = true;
+            printf("%.f %.f %.f\n%.f %.f %.f\n%.f %.f %.f\n%.f %.f %.f\n",
+                level.Plane[plane].vertex1.x,
+                level.Plane[plane].vertex1.y,
+                level.Plane[plane].vertex1.z,
+                level.Plane[plane].vertex2.x,
+                level.Plane[plane].vertex2.y,
+                level.Plane[plane].vertex2.z,
+                level.Plane[plane].vertex3.x,
+                level.Plane[plane].vertex3.y,
+                level.Plane[plane].vertex3.z,
+                level.Plane[plane].vertex4.x,
+                level.Plane[plane].vertex4.y,
+                level.Plane[plane].vertex4.z
+            );
+            // printf("%d\n%d\n%d",surfedgeLump[faceLump[face].firstedge + 0],surfedgeLump[faceLump[face].firstedge + 1],surfedgeLump[faceLump[face].firstedge + 2]);
+        }
 
+        level.Plane[plane].x0 = 0;
+        level.Plane[plane].y0 = 0;
+        level.Plane[plane].x1 = 255;
+        level.Plane[plane].y1 = 255;
+        
+
+        // printf("%s\n",texdataStrings + texdataStringTable[texdataLump[texinfoLump[faceLump[face].texinfo].texdata].nameStringTableID]);
+        // printf("%d ",texdataLump[texinfoLump[faceLump[face].texinfo].texdata].nameStringTableID);
+        // printf("%d ",surfedgeLump[faceLump[face].firstedge + 0]);
+
+        // char* tempMaterial = malloc(strlen(texdataStrings + texdataStringTable[texdataLump[texinfoLump[faceLump[face].texinfo].texdata].nameStringTableID]));
+        // strcpy(tempMaterial, texdataStrings + texdataStringTable[texdataLump[texinfoLump[faceLump[face].texinfo].texdata].nameStringTableID]);
+        char* tempMaterial = texdataStrings + texdataStringTable[texdataLump[texinfoLump[faceLump[face].texinfo].texdata].nameStringTableID];
+
+        //convert string material names to materials used in LoadTextures
+        if (strcmp(tempMaterial, "TILE/WHITE_CEILING_TILE002A") == 0) {
+            level.Plane[plane].material = white_ceiling_tile002a;
+        }
+        else if (strcmp(tempMaterial, "TILE/WHITE_FLOOR_TILE002A") == 0) {
+            level.Plane[plane].material = white_floor_tile002a;
+        }
+        else if (strcmp(tempMaterial, "TILE/WHITE_WALL_TILE003A") == 0) {
+            level.Plane[plane].material = white_wall_tile003a;
+        }
+        else if (strcmp(tempMaterial, "TILE/WHITE_WALL_TILE003C") == 0) {
+            level.Plane[plane].material = white_wall_tile003c;
+        }
+        else if (strcmp(tempMaterial, "TILE/WHITE_WALL_TILE003F") == 0) {
+            level.Plane[plane].material = white_wall_tile003f;
+        }
+        else if (strcmp(tempMaterial, "METAL/BLACK_FLOOR_METAL_001C") == 0) {
+            level.Plane[plane].material = black_floor_metal_001c;
+        }
+        else if (strcmp(tempMaterial, "METAL/BLACK_WALL_METAL_002A") == 0) {
+            level.Plane[plane].material = black_wall_metal_002a;
+        }
+        else if (strcmp(tempMaterial, "METAL/BLACK_WALL_METAL_002B") == 0) {
+            level.Plane[plane].material = black_wall_metal_002b;
+        }
+        else if (strcmp(tempMaterial, "METAL/BLACK_WALL_METAL_002C") == 0) {
+            level.Plane[plane].material = black_wall_metal_002c;
+        }
+        else if (strcmp(tempMaterial, "TOOLS/TOOLSNODRAW") == 0){
+            level.Plane[plane].isDrawn = 0;
+            continue;
+        }
+        //if material not recognized use debug texture
+        else {
+            level.Plane[plane].material = debugempty;
+            //level.Plane[plane].isDrawn = 0;
+        }
+
+        plane++;
     }
 
 
@@ -692,7 +822,7 @@ int loadLevelBsp(char* levelName) {
     
 
     // printf("%d\n", faceLump[0].numedges);
-    level.planeCount = header.lumps[LUMP_FACES].filelen / sizeof(struct dface_t);
+    level.planeCount = plane;
     level.name = levelName;
     
     fclose(levelFile);

@@ -8,7 +8,7 @@
 
 #define BSP_USE_LESS_MEMORY
 
-#define MAX_PLANES 200
+#define MAX_PLANES 2000
 #define MAX_HITBOXES 120
 #define PLAYER_HIGHT 64 * LEVEL_SIZE //space below the camera
 #define PLAYER_HIGHT_TOP 2 * LEVEL_SIZE //space above the camera
@@ -163,5 +163,7 @@ extern Keyboard *keyboard;
 // Call a Squirrel (ingame script language) function
 int callSquirrel(HSQUIRRELVM vm, const char* function);
 void registerEntity(char* className, char* targetName, void* entity);
+int max(int __arg1, int __arg2);
+int min(int __arg1, int __arg2);
 
 #endif

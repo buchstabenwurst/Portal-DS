@@ -11,6 +11,7 @@
 
 float dot(Vector3 a, Vector3 b);
 Vector3 Normalize(Vector3 vector);
+float getDistance(Vector3 pos1, Vector3 pos2);
 void addHitbox(Vector3 size, Vector3* position, Vector3* rotation, bool isDynamic);
 void shootPortal(bool Portal);
 void doPhysics(void);
