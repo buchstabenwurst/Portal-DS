@@ -582,11 +582,6 @@ int loadLevelBsp(char* levelName) {
         //     // printf("%d\n%d\n%d",surfedgeLump[faceLump[face].firstedge + 0],surfedgeLump[faceLump[face].firstedge + 1],surfedgeLump[faceLump[face].firstedge + 2]);
         // }
 
-        // placeholder textue coordinates
-        level.Plane[plane].x0 = 0;
-        level.Plane[plane].y0 = 0;
-        level.Plane[plane].x1 = 255;
-        level.Plane[plane].y1 = 255;
         
 
         // printf("%s\n",texdataStrings + texdataStringTable[texdataLump[texinfoLump[faceLump[face].texinfo].texdata].nameStringTableID]);
@@ -633,6 +628,30 @@ int loadLevelBsp(char* levelName) {
         else {
             level.Plane[plane].material = debugempty;
             //level.Plane[plane].isDrawn = 0;
+        }
+
+        // UV
+        Vector3 tv[2];
+        tv[0].x = texinfoLump[faceLump[face].texinfo].textureVecsTexelsPerWorldUnits[0][0];
+        tv[0].y = texinfoLump[faceLump[face].texinfo].textureVecsTexelsPerWorldUnits[0][1];
+        tv[0].z = texinfoLump[faceLump[face].texinfo].textureVecsTexelsPerWorldUnits[0][2];
+        tv[1].x = texinfoLump[faceLump[face].texinfo].textureVecsTexelsPerWorldUnits[1][0];
+        tv[1].y = texinfoLump[faceLump[face].texinfo].textureVecsTexelsPerWorldUnits[1][1];
+        tv[1].z = texinfoLump[faceLump[face].texinfo].textureVecsTexelsPerWorldUnits[1][2];
+        level.Plane[plane].x0 = (dot(tv[1], level.Plane[plane].vertex1) + texinfoLump[faceLump[face].texinfo].textureVecsTexelsPerWorldUnits[1][3]) / 8;
+        level.Plane[plane].y0 = (dot(tv[0], level.Plane[plane].vertex1) + texinfoLump[faceLump[face].texinfo].textureVecsTexelsPerWorldUnits[0][3]) / 8;
+        level.Plane[plane].x1 = (dot(tv[1], level.Plane[plane].vertex3) + texinfoLump[faceLump[face].texinfo].textureVecsTexelsPerWorldUnits[1][3]) / 8;
+        level.Plane[plane].y1 = (dot(tv[0], level.Plane[plane].vertex3) + texinfoLump[faceLump[face].texinfo].textureVecsTexelsPerWorldUnits[0][3]) / 8;
+
+        // Floor UV rotated??? todo: find out why
+        // quick fix
+        if (level.Plane[plane].vertex1.z == level.Plane[plane].vertex3.z) {
+            int tmpX0 = level.Plane[plane].x0;
+            int tmpX1 = level.Plane[plane].x1;
+            level.Plane[plane].x0 = level.Plane[plane].y0;
+            level.Plane[plane].x1 = level.Plane[plane].y1;
+            level.Plane[plane].y0 = tmpX0;
+            level.Plane[plane].y1 = tmpX1;
         }
 
         plane++;
