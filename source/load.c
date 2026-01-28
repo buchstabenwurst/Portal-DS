@@ -480,6 +480,12 @@ int loadLevelBsp(char* levelName) {
     fseek(levelFile, header.lumps[LUMP_FACES].fileofs, SEEK_SET);
     fread(&faceLump, header.lumps[LUMP_FACES].filelen, 1, levelFile);
 
+    // Read original faces
+    struct dface_t originalFaceLump[header.lumps[LUMP_ORIGINALFACES].filelen / sizeof(struct dface_t)];
+    // struct dface_t originalFaceLump[MAX_MAP_FACES];
+    fseek(levelFile, header.lumps[LUMP_ORIGINALFACES].fileofs, SEEK_SET);
+    fread(&originalFaceLump, header.lumps[LUMP_ORIGINALFACES].filelen, 1, levelFile);
+
     // Read edges
     struct dedge_t edgeLump[header.lumps[LUMP_EDGES].filelen / sizeof(struct dedge_t)];
     // struct dedge_t edgeLump[MAX_MAP_EDGES];
@@ -525,66 +531,58 @@ int loadLevelBsp(char* levelName) {
 
     // every face
 
-    // TODO: PLEASE PLEASE PLEASE rework the face loading PLEASE! this one is awful
     int planesToLoad = min(header.lumps[LUMP_FACES].filelen / sizeof(struct dface_t), MAX_PLANES);
     // face=plane in level file; plane=plane ingame(excluded nodraw)
     int plane = 0;
     for (int face = 0; face < planesToLoad + (planesToLoad-plane); face++)
     {
-
-        // Vector3* tmpvertex[faceLump[face].numedges];
-        // for (int n = 0; n <= faceLump[face].numedges; n++)
-        // {
-        //     tmpvertex[n] = &vertexLump[edgeLump[abs(surfedgeLump[faceLump[face].firstedge + n])].v[0]].point;
-        // }
-        // level.Plane[plane].vertex1 = *tmpvertex[0];
-        // level.Plane[plane].vertex2 = *tmpvertex[1];
-        // level.Plane[plane].vertex3 = *tmpvertex[2];
-        // level.Plane[plane].vertex4 = *tmpvertex[3];
-        
-        // printf("%d",faceLump[face].side);
-        // if(faceLump[face].side){
+        int firstEdge = originalFaceLump[faceLump[face].origFace].firstedge;
+        int nextEdge = originalFaceLump[faceLump[face].origFace].firstedge + 2;
+        if(faceLump[face].numedges >= 4){
+            if(surfedgeLump[firstEdge] > 0){
+                level.Plane[plane].vertex1 = vertexLump[edgeLump[abs(surfedgeLump[firstEdge])].v[0]].point;
+                level.Plane[plane].vertex2 = vertexLump[edgeLump[abs(surfedgeLump[firstEdge])].v[1]].point;
+            }else{
+                level.Plane[plane].vertex1 = vertexLump[edgeLump[abs(surfedgeLump[firstEdge])].v[1]].point;
+                level.Plane[plane].vertex2 = vertexLump[edgeLump[abs(surfedgeLump[firstEdge])].v[0]].point;
+            }
             
-        // }else{
-        // }
-
-        if(surfedgeLump[faceLump[face].firstedge + 0] > 0){
-            level.Plane[plane].vertex1 = vertexLump[edgeLump[abs(surfedgeLump[faceLump[face].firstedge + 0])].v[0]].point;
-            level.Plane[plane].vertex2 = vertexLump[edgeLump[abs(surfedgeLump[faceLump[face].firstedge + 0])].v[1]].point;
-        }else{
-            level.Plane[plane].vertex1 = vertexLump[edgeLump[abs(surfedgeLump[faceLump[face].firstedge + 0])].v[1]].point;
-            level.Plane[plane].vertex2 = vertexLump[edgeLump[abs(surfedgeLump[faceLump[face].firstedge + 0])].v[0]].point;
-        }
-        
-        if(surfedgeLump[faceLump[face].firstedge + 2] > 0){
-            level.Plane[plane].vertex3 = vertexLump[edgeLump[abs(surfedgeLump[faceLump[face].firstedge + 2])].v[0]].point;
-            level.Plane[plane].vertex4 = vertexLump[edgeLump[abs(surfedgeLump[faceLump[face].firstedge + 2])].v[1]].point;
-        }else{
-            level.Plane[plane].vertex3 = vertexLump[edgeLump[abs(surfedgeLump[faceLump[face].firstedge + 2])].v[1]].point;
-            level.Plane[plane].vertex4 = vertexLump[edgeLump[abs(surfedgeLump[faceLump[face].firstedge + 2])].v[0]].point;
+            if(surfedgeLump[nextEdge] > 0){
+                level.Plane[plane].vertex3 = vertexLump[edgeLump[abs(surfedgeLump[nextEdge])].v[0]].point;
+                level.Plane[plane].vertex4 = vertexLump[edgeLump[abs(surfedgeLump[nextEdge])].v[1]].point;
+            }else{
+                level.Plane[plane].vertex3 = vertexLump[edgeLump[abs(surfedgeLump[nextEdge])].v[1]].point;
+                level.Plane[plane].vertex4 = vertexLump[edgeLump[abs(surfedgeLump[nextEdge])].v[0]].point;
+            }
         }
 
         level.Plane[plane].isDrawn = true;
-        // printf("%d\n",faceLump[200].firstedge);
-        if(faceLump[face].firstedge == faceLump[300].firstedge){
-            level.Plane[plane].isDrawn = true;
-            printf("%.f %.f %.f\n%.f %.f %.f\n%.f %.f %.f\n%.f %.f %.f\n",
-                level.Plane[plane].vertex1.x,
-                level.Plane[plane].vertex1.y,
-                level.Plane[plane].vertex1.z,
-                level.Plane[plane].vertex2.x,
-                level.Plane[plane].vertex2.y,
-                level.Plane[plane].vertex2.z,
-                level.Plane[plane].vertex3.x,
-                level.Plane[plane].vertex3.y,
-                level.Plane[plane].vertex3.z,
-                level.Plane[plane].vertex4.x,
-                level.Plane[plane].vertex4.y,
-                level.Plane[plane].vertex4.z
-            );
-            // printf("%d\n%d\n%d",surfedgeLump[faceLump[face].firstedge + 0],surfedgeLump[faceLump[face].firstedge + 1],surfedgeLump[faceLump[face].firstedge + 2]);
-        }
+        // if(faceLump[face].firstedge == faceLump[310].firstedge){
+        //     level.Plane[plane].isDrawn = true;
+        //     printf("%.f %.f %.f\n%.f %.f %.f\n%.f %.f %.f\n%.f %.f %.f\n",
+        //         level.Plane[plane].vertex1.x,
+        //         level.Plane[plane].vertex1.y,
+        //         level.Plane[plane].vertex1.z,
+        //         level.Plane[plane].vertex2.x,
+        //         level.Plane[plane].vertex2.y,
+        //         level.Plane[plane].vertex2.z,
+        //         level.Plane[plane].vertex3.x,
+        //         level.Plane[plane].vertex3.y,
+        //         level.Plane[plane].vertex3.z,
+        //         level.Plane[plane].vertex4.x,
+        //         level.Plane[plane].vertex4.y,
+        //         level.Plane[plane].vertex4.z
+        //     );
+        //     for (int i = 0; i < 10; i++)
+        //     {
+        //         // printf("%f\n",dot(vertexLump[edgeLump[abs(surfedgeLump[firstEdge+i])].v[1]].point, vertexLump[edgeLump[abs(surfedgeLump[firstEdge+i+1])].v[1]].point));
+        //         // printf("%d\n",vertexLump[edgeLump[abs(surfedgeLump[faceLump[face].firstedge + i])].v[0]].point);
+        //     }
+        //     printf("%d",faceLump[face].numedges);
+        //     // printf("%d\n%d\n%d",surfedgeLump[faceLump[face].firstedge + 0],surfedgeLump[faceLump[face].firstedge + 1],surfedgeLump[faceLump[face].firstedge + 2]);
+        // }
 
+        // placeholder textue coordinates
         level.Plane[plane].x0 = 0;
         level.Plane[plane].y0 = 0;
         level.Plane[plane].x1 = 255;
