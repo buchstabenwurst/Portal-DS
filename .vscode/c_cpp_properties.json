@@ -1,0 +1,23 @@
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [
+                "${default}",
+                "/opt/wonderful/thirdparty/blocksds/external/nitro-engine/include",
+                "/opt/wonderful/thirdparty/blocksds/core/libs/dswifi/include",
+                "/opt/wonderful/thirdparty/blocksds/core/libs/libnds/include",
+                "/opt/wonderful/thirdparty/blocksds/core/libs/libteak/include",
+                "/opt/wonderful/thirdparty/blocksds/core/libs/libxm7/include",
+                "/opt/wonderful/thirdparty/blocksds/core/libs/maxmod/include",
+                "/opt/wonderful/thirdparty/blocksds/core/libs/version/include"
+            ],
+            "defines": [],
+            "compilerPath": "/usr/bin/clang",
+            "cStandard": "c17",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "linux-clang-x64"
+        }
+    ],
+    "version": 4
+}
