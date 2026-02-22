@@ -62,25 +62,24 @@ esac
 
 sed -i "$(wc -l < $Sorce/assetsTemplate.h)i\\#include \"$IngameName.h\"\\" $Sorce/assets.h
 # sed -i "7i\\MaterialMetadata Material_$FriendlyIngameName;\\" $Sorce/assetsArray.h
-echo "NE_Material* NEMaterial_$FriendlyIngameName;" >> $Sorce/assets.h
-echo "NE_Palette* NEPallette_$FriendlyIngameName;" >> $Sorce/assets.h
-echo const MaterialMetadata Material_$FriendlyIngameName = { >> $Sorce/assets.h
-echo \"$(echo $IngameName | tr '[:lower:]' '[:upper:]')\",>> $Sorce/assets.h
-echo $(file -b $1.png | cut -d " " -f 4,6 --output-delimiter ", " | rev | cut -c 2- | rev), >> $Sorce/assets.h
-echo $Basename"Bitmap," >> $Sorce/assets.h
+echo -n "NE_Material* NEMaterial_$FriendlyIngameName;" >> $Sorce/assetsTMP.h
+echo -n "NE_Palette* NEPallette_$FriendlyIngameName;" >> $Sorce/assetsTMP.h
+echo -n const MaterialMetadata Material_$FriendlyIngameName = { >> $Sorce/assetsTMP.h
+echo -n \"$(echo $IngameName | tr '[:lower:]' '[:upper:]')\",>> $Sorce/assetsTMP.h
+echo -n $(file -b $1.png | cut -d " " -f 4,6 --output-delimiter ", " | rev | cut -c 2- | rev), >> $Sorce/assetsTMP.h
+echo -n $Basename"Bitmap," >> $Sorce/assetsTMP.h
 if [ $NumColors -lt 0 ] ; then
-  echo "NULL," >> $Sorce/assets.h
+  echo -n "NULL," >> $Sorce/assetsTMP.h
 else
-  echo $Basename"Pal," >> $Sorce/assets.h
+  echo -n $Basename"Pal," >> $Sorce/assetsTMP.h
 fi
-echo $NumColors"," >> $Sorce/assets.h
-echo $TextureFormat, >> $Sorce/assets.h
-echo "NE_TEXTURE_WRAP_S | NE_TEXTURE_WRAP_T" >> $Sorce/assets.h
-echo "};" >> $Sorce/assets.h
-echo "" >> $Sorce/assets.h
+echo -n $NumColors"," >> $Sorce/assetsTMP.h
+echo -n $TextureFormat, >> $Sorce/assetsTMP.h
+echo -n "NE_TEXTURE_WRAP_S | NE_TEXTURE_WRAP_T" >> $Sorce/assetsTMP.h
+echo -n "};" >> $Sorce/assetsTMP.h
 
-# sed -i "$(wc -l < $Sorce/assetsArray.h)i\\$(cat $Sorce/assetsArrayTMP.h)\\" $Sorce/assetsArray.h
-# rm $Sorce/assetsArrayTMP.h
+sed -i "$(wc -l < $Sorce/assets.h)i\\$(cat $Sorce/assetsTMP.h)\\" $Sorce/assets.h
+rm $Sorce/assetsTMP.h
 
 
 sed -i "$(($(grep -n "MaterialMetadata textures" $Sorce/assetsArray.h | cut -f1 -d:)+1))i\\  Material_$FriendlyIngameName,\\" $Sorce/assetsArray.h
