@@ -1,3 +1,5 @@
+#ifndef ASSETS_H
+#define ASSETS_H
 // Texture Metadata only used for loading the texture
 typedef struct
 {
@@ -78,3 +80,4 @@ typedef struct
 
 
 
+#endif
