@@ -380,3 +380,6 @@ FodyWeavers.xsd
 assets/Maps/sp_a2_triple_laser.bsp
 assets/scripts/vscripts/sp_elevator_motifs.nut
 assets/scripts/vscripts/sp_transition_list.nut
+source/assets.h
+source/assetsArray.h
+assets/WIP_files/Original_Portal_Textures/

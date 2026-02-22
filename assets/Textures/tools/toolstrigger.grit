@@ -1,0 +1,2 @@
+# 5 bits of alpha, 3 bits of color index, max palette length 16
+-gx -gb -pn16 -gBa3i5 -gT!

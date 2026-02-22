@@ -181,7 +181,7 @@ void RenderPlanes(Level level) {
             continue;
 
         // Render a plane
-        NE_PolyFormat(31, 1, NE_LIGHT_0, NE_CULL_NONE, 0);
+        NE_PolyFormat(31, 1, NE_LIGHT_0, NE_CULL_BACK, 0);
 
         NE_MaterialUse(level.Plane[i].material);
 

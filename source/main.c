@@ -35,7 +35,7 @@ int sensitivityVertical = 140;
 
 bool isConsoleOpen = false;
 bool debugText = false;
-bool debugVision = true;
+bool debugVision = false;
 
 HSQUIRRELVM squirrelvm;
 Level level;
@@ -244,7 +244,7 @@ int main(void)
 
     // Background
     NE_ClearColorSet(NE_Black, 31, 63);
-    ToggleConsole();
+    // ToggleConsole();
 
     int fpscount = 0;
     // This is used to see if second has changed

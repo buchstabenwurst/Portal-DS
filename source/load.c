@@ -1,6 +1,6 @@
 #include <NEMain.h>
 #include <string.h>
-#include "assets.h"
+#include "assetsArray.h"
 #include "main.h"
 #include "load.h"
 #include "physics.h"
@@ -21,8 +21,8 @@ NE_Material *w_portalgun_tex, *portal_orange_tex, *portal_blue_tex;
 NE_Palette *w_portalgun_pal, *portal_orange_pal, *portal_blue_pal;
 
 //Map textures
-NE_Material* white_ceiling_tile002a, * white_floor_tile002a, * white_floor_tile002a_hd, * white_wall_tile003a, * white_wall_tile003a_hd, * white_wall_tile003c, * white_wall_tile003c_hd, * white_wall_tile003f, * white_wall_tile003f_hd, * black_floor_metal_001c, * black_floor_metal_001c_hd, * black_wall_metal_002a, * black_wall_metal_002a_hd, * black_wall_metal_002b, * black_wall_metal_002b_hd, * black_wall_metal_002c, * black_wall_metal_002c_hd, * Debug_Material, * debugempty;
-NE_Palette* white_ceiling_tile002aPal, * white_floor_tile002aPal, * white_floor_tile002a_hdPal, * white_wall_tile003aPal, * white_wall_tile003a_hdPal, * white_wall_tile003cPal, * white_wall_tile003c_hdPal, * white_wall_tile003fPal, * white_wall_tile003f_hdPal, * black_floor_metal_001cPal, * black_floor_metal_001c_hdPal, * black_wall_metal_002aPal, * black_wall_metal_002a_hdPal, * black_wall_metal_002bPal, * black_wall_metal_002b_hdPal, * black_wall_metal_002cPal, * black_wall_metal_002c_hdPal;
+NE_Material* white_ceiling_tile002a, * white_floor_tile002a, * white_floor_tile002a_hd, * white_wall_tile003a, * white_wall_tile003a_hd, * white_wall_tile003c, * white_wall_tile003c_hd, * white_wall_tile003f, * white_wall_tile003f_hd, * black_floor_metal_001c, * black_floor_metal_001c_hd, * black_wall_metal_002a, * black_wall_metal_002a_hd, * black_wall_metal_002b, * black_wall_metal_002b_hd, * black_wall_metal_002c, * black_wall_metal_002c_hd, * Debug_Material, * debugempty, * toolstrigger;
+NE_Palette* white_ceiling_tile002aNEPalette, * white_floor_tile002aNEPalette, * white_floor_tile002a_hdNEPalette, * white_wall_tile003aNEPalette, * white_wall_tile003a_hdNEPalette, * white_wall_tile003cNEPalette, * white_wall_tile003c_hdNEPalette, * white_wall_tile003fNEPalette, * white_wall_tile003f_hdNEPalette, * black_floor_metal_001cNEPalette, * black_floor_metal_001c_hdNEPalette, * black_wall_metal_002aNEPalette, * black_wall_metal_002a_hdNEPalette, * black_wall_metal_002bNEPalette, * black_wall_metal_002b_hdNEPalette, * black_wall_metal_002cNEPalette, * black_wall_metal_002c_hdNEPalette, * toolstriggerNEPalette;
 //for when you can create multiple texture usig one pallete
 //NE_Palette* tile_cleanPal16, * metal_cleanPal16;
 
@@ -56,6 +56,29 @@ void LoadPal4_1_2(NE_Material* material, void* texturelBin, NE_Palette* palette,
 }
 
 
+NE_Material* loadTexture(char* name){
+    // load Texture by searching for the Terures mane in textures[] and using the same index for neMaterials[] and nePallettes[]
+    for(int i = 0; i < sizeof(textures)/sizeof(MaterialMetadata); i++){
+        if (strcmp(textures[i].name, name) == 0){
+            if(!alreadyLoadedTextures[i]){
+                printf(" load.c > Loaded %s\n",textures[i].name);
+                *neMaterials[i] = NE_MaterialCreate();
+                *nePallettes[i] = NE_PaletteCreate();
+                NE_MaterialTexLoad(*neMaterials[i], textures[i].textureFormat, textures[i].x, textures[i].y, textures[i].textureFlags, textures[i].textureData);
+                // load pallette if necessary
+                if(textures[i].numColors >= 0 )
+                    {
+                        NE_PaletteLoad(*nePallettes[i], textures[i].palletteData, textures[i].numColors, textures[i].textureFormat);
+                        NE_MaterialSetPalette(*neMaterials[i], *nePallettes[i]);
+                    }
+                alreadyLoadedTextures[i] = true;
+                }
+            return *neMaterials[i];
+        }
+    }
+    return debugempty;
+}
+
 // load textures
 // @param textureMode   0 = Low Resolution but many diffrent textures
 //                      1 = TODO High Resolution but more tepeating textures
@@ -76,49 +99,51 @@ void LoadTextures()
     //tile_cleanPal16 = NE_PaletteCreate();
     //metal_cleanPal16 = NE_PaletteCreate();
 
-    white_ceiling_tile002aPal = NE_PaletteCreate();
-    white_floor_tile002aPal = NE_PaletteCreate();
-    white_wall_tile003aPal = NE_PaletteCreate();
-    white_wall_tile003cPal = NE_PaletteCreate();
-    white_wall_tile003fPal = NE_PaletteCreate();
-    black_floor_metal_001cPal = NE_PaletteCreate();
-    black_wall_metal_002aPal = NE_PaletteCreate();
-    black_wall_metal_002bPal = NE_PaletteCreate();
-    black_wall_metal_002cPal = NE_PaletteCreate();
+    white_ceiling_tile002aNEPalette = NE_PaletteCreate();
+    white_floor_tile002aNEPalette = NE_PaletteCreate();
+    white_wall_tile003aNEPalette = NE_PaletteCreate();
+    white_wall_tile003cNEPalette = NE_PaletteCreate();
+    white_wall_tile003fNEPalette = NE_PaletteCreate();
+    black_floor_metal_001cNEPalette = NE_PaletteCreate();
+    black_wall_metal_002aNEPalette = NE_PaletteCreate();
+    black_wall_metal_002bNEPalette = NE_PaletteCreate();
+    black_wall_metal_002cNEPalette = NE_PaletteCreate();
 
     if (textureMode == 0)
     {
-        LoadPal2(white_ceiling_tile002a, (u8*)white_ceiling_tile002a_tex_bin, white_ceiling_tile002aPal, (void*)white_ceiling_tile002a_pal_bin, 64);
+        LoadPal2(white_ceiling_tile002a, (u8*)white_ceiling_tile002a_tex_bin, white_ceiling_tile002aNEPalette, (void*)white_ceiling_tile002a_pal_bin, 64);
 
-        LoadPal4(white_floor_tile002a, (u8*)white_floor_tile002a_tex_bin, white_floor_tile002aPal, (void*)white_floor_tile002a_pal_bin, 64);
+        LoadPal4(white_floor_tile002a, (u8*)white_floor_tile002a_tex_bin, white_floor_tile002aNEPalette, (void*)white_floor_tile002a_pal_bin, 64);
 
-        LoadPal4_1_2(white_wall_tile003a, (u8*)white_wall_tile003a_tex_bin, white_wall_tile003aPal, (void*)white_wall_tile003a_pal_bin, 64);
+        LoadPal4_1_2(white_wall_tile003a, (u8*)white_wall_tile003a_tex_bin, white_wall_tile003aNEPalette, (void*)white_wall_tile003a_pal_bin, 64);
 
-        LoadPal4(white_wall_tile003c, (u8*)white_wall_tile003c_tex_bin, white_wall_tile003cPal, (void*)white_wall_tile003c_pal_bin, 64);
+        LoadPal4(white_wall_tile003c, (u8*)white_wall_tile003c_tex_bin, white_wall_tile003cNEPalette, (void*)white_wall_tile003c_pal_bin, 64);
 
-        LoadPal4(white_wall_tile003f, (u8*)white_wall_tile003f_tex_bin, white_wall_tile003fPal, (void*)white_wall_tile003f_pal_bin, 32);
+        LoadPal4(white_wall_tile003f, (u8*)white_wall_tile003f_tex_bin, white_wall_tile003fNEPalette, (void*)white_wall_tile003f_pal_bin, 32);
 
-        LoadPal4(black_floor_metal_001c, (u8*)black_floor_metal_001c_tex_bin, black_floor_metal_001cPal, (void*)black_floor_metal_001c_pal_bin, 64);
+        LoadPal4(black_floor_metal_001c, (u8*)black_floor_metal_001c_tex_bin, black_floor_metal_001cNEPalette, (void*)black_floor_metal_001c_pal_bin, 64);
 
-        LoadPal16(black_wall_metal_002a, (u8*)black_wall_metal_002a_tex_bin, black_wall_metal_002aPal, (void*)black_wall_metal_002a_pal_bin, 256);
+        LoadPal16(black_wall_metal_002a, (u8*)black_wall_metal_002a_tex_bin, black_wall_metal_002aNEPalette, (void*)black_wall_metal_002a_pal_bin, 256);
 
-        LoadPal16(black_wall_metal_002b, (u8*)black_wall_metal_002b_tex_bin, black_wall_metal_002bPal, (void*)black_wall_metal_002b_pal_bin, 256);
+        LoadPal16(black_wall_metal_002b, (u8*)black_wall_metal_002b_tex_bin, black_wall_metal_002bNEPalette, (void*)black_wall_metal_002b_pal_bin, 256);
 
-        LoadPal16(black_wall_metal_002c, (u8*)black_wall_metal_002c_tex_bin, black_wall_metal_002cPal, (void*)black_wall_metal_002c_pal_bin, 256);
+        LoadPal16(black_wall_metal_002c, (u8*)black_wall_metal_002c_tex_bin, black_wall_metal_002cNEPalette, (void*)black_wall_metal_002c_pal_bin, 256);
     }
     else if (textureMode == 1) 
     {
-        LoadPal16(white_floor_tile002a, (u8*)white_floor_tile002a_hd_tex_bin, white_floor_tile002aPal, (void*)white_floor_tile002a_hd_pal_bin, 512);
+        LoadPal16(white_floor_tile002a, (u8*)white_floor_tile002a_hd_tex_bin, white_floor_tile002aNEPalette, (void*)white_floor_tile002a_hd_pal_bin, 512);
 
-        LoadPal16(white_wall_tile003a, (u8*)white_wall_tile003a_hd_tex_bin, white_wall_tile003aPal, (void*)white_wall_tile003a_hd_pal_bin, 256);
+        LoadPal16(white_wall_tile003a, (u8*)white_wall_tile003a_hd_tex_bin, white_wall_tile003aNEPalette, (void*)white_wall_tile003a_hd_pal_bin, 256);
 
-        LoadPal16(black_floor_metal_001c, (u8*)black_floor_metal_001c_hd_tex_bin, black_floor_metal_001cPal, (void*)black_floor_metal_001c_hd_pal_bin, 256);
+        LoadPal16(black_floor_metal_001c, (u8*)black_floor_metal_001c_hd_tex_bin, black_floor_metal_001cNEPalette, (void*)black_floor_metal_001c_hd_pal_bin, 256);
 
-        LoadPal16(black_wall_metal_002a, (u8*)black_wall_metal_002a_hd_tex_bin, black_wall_metal_002aPal, (void*)black_wall_metal_002a_hd_pal_bin, 512);
+        LoadPal16(black_wall_metal_002a, (u8*)black_wall_metal_002a_hd_tex_bin, black_wall_metal_002aNEPalette, (void*)black_wall_metal_002a_hd_pal_bin, 512);
 
     }
     Debug_Material = NE_MaterialCreate();
     debugempty = NE_MaterialCreate();
+    toolstrigger = NE_MaterialCreate();
+    toolstriggerNEPalette = NE_PaletteCreate();
     w_portalgun_tex = NE_MaterialCreate();
     w_portalgun_pal = NE_PaletteCreate();
     portal_orange_tex = NE_MaterialCreate();
@@ -583,6 +608,19 @@ int loadLevelBsp(char* levelName) {
         // }
 
         
+        // UV
+        Vector3 tv[2];
+        tv[0].x = texinfoLump[faceLump[face].texinfo].textureVecsTexelsPerWorldUnits[0][0];
+        tv[0].y = texinfoLump[faceLump[face].texinfo].textureVecsTexelsPerWorldUnits[0][1];
+        tv[0].z = texinfoLump[faceLump[face].texinfo].textureVecsTexelsPerWorldUnits[0][2];
+        tv[1].x = texinfoLump[faceLump[face].texinfo].textureVecsTexelsPerWorldUnits[1][0];
+        tv[1].y = texinfoLump[faceLump[face].texinfo].textureVecsTexelsPerWorldUnits[1][1];
+        tv[1].z = texinfoLump[faceLump[face].texinfo].textureVecsTexelsPerWorldUnits[1][2];
+        level.Plane[plane].x1 = (dot(tv[1], level.Plane[plane].vertex1) + texinfoLump[faceLump[face].texinfo].textureVecsTexelsPerWorldUnits[1][3]) / 8;
+        level.Plane[plane].y1 = (dot(tv[0], level.Plane[plane].vertex1) + texinfoLump[faceLump[face].texinfo].textureVecsTexelsPerWorldUnits[0][3]) / 8;
+        level.Plane[plane].x0 = (dot(tv[1], level.Plane[plane].vertex3) + texinfoLump[faceLump[face].texinfo].textureVecsTexelsPerWorldUnits[1][3]) / 8;
+        level.Plane[plane].y0 = (dot(tv[0], level.Plane[plane].vertex3) + texinfoLump[faceLump[face].texinfo].textureVecsTexelsPerWorldUnits[0][3]) / 8;
+
 
         // printf("%s\n",texdataStrings + texdataStringTable[texdataLump[texinfoLump[faceLump[face].texinfo].texdata].nameStringTableID]);
         // printf("%d ",texdataLump[texinfoLump[faceLump[face].texinfo].texdata].nameStringTableID);
@@ -592,56 +630,22 @@ int loadLevelBsp(char* levelName) {
         // strcpy(tempMaterial, texdataStrings + texdataStringTable[texdataLump[texinfoLump[faceLump[face].texinfo].texdata].nameStringTableID]);
         char* tempMaterial = texdataStrings + texdataStringTable[texdataLump[texinfoLump[faceLump[face].texinfo].texdata].nameStringTableID];
 
-        //convert string material names to materials used in LoadTextures
-        if (strcmp(tempMaterial, "TILE/WHITE_CEILING_TILE002A") == 0) {
-            level.Plane[plane].material = white_ceiling_tile002a;
-        }
-        else if (strcmp(tempMaterial, "TILE/WHITE_FLOOR_TILE002A") == 0) {
-            level.Plane[plane].material = white_floor_tile002a;
-        }
-        else if (strcmp(tempMaterial, "TILE/WHITE_WALL_TILE003A") == 0) {
-            level.Plane[plane].material = white_wall_tile003a;
-        }
-        else if (strcmp(tempMaterial, "TILE/WHITE_WALL_TILE003C") == 0) {
-            level.Plane[plane].material = white_wall_tile003c;
-        }
-        else if (strcmp(tempMaterial, "TILE/WHITE_WALL_TILE003F") == 0) {
-            level.Plane[plane].material = white_wall_tile003f;
-        }
-        else if (strcmp(tempMaterial, "METAL/BLACK_FLOOR_METAL_001C") == 0) {
-            level.Plane[plane].material = black_floor_metal_001c;
-        }
-        else if (strcmp(tempMaterial, "METAL/BLACK_WALL_METAL_002A") == 0) {
-            level.Plane[plane].material = black_wall_metal_002a;
-        }
-        else if (strcmp(tempMaterial, "METAL/BLACK_WALL_METAL_002B") == 0) {
-            level.Plane[plane].material = black_wall_metal_002b;
-        }
-        else if (strcmp(tempMaterial, "METAL/BLACK_WALL_METAL_002C") == 0) {
-            level.Plane[plane].material = black_wall_metal_002c;
+        // load apropreate Texture
+        level.Plane[plane].material = loadTexture(tempMaterial);
+        // printf("%s\n",tempMaterial);
+        if (strcmp(tempMaterial, "TOOLS/TOOLSTRIGGER") == 0) {
+            // level.Plane[plane].material = toolstrigger;
+            level.Plane[plane].x0 = 0;
+            level.Plane[plane].y0 = 0;
+            level.Plane[plane].x1 = 255;
+            level.Plane[plane].y1 = 255;
         }
         else if (strcmp(tempMaterial, "TOOLS/TOOLSNODRAW") == 0){
             level.Plane[plane].isDrawn = 0;
             continue;
         }
-        //if material not recognized use debug texture
-        else {
-            level.Plane[plane].material = debugempty;
-            //level.Plane[plane].isDrawn = 0;
-        }
 
-        // UV
-        Vector3 tv[2];
-        tv[0].x = texinfoLump[faceLump[face].texinfo].textureVecsTexelsPerWorldUnits[0][0];
-        tv[0].y = texinfoLump[faceLump[face].texinfo].textureVecsTexelsPerWorldUnits[0][1];
-        tv[0].z = texinfoLump[faceLump[face].texinfo].textureVecsTexelsPerWorldUnits[0][2];
-        tv[1].x = texinfoLump[faceLump[face].texinfo].textureVecsTexelsPerWorldUnits[1][0];
-        tv[1].y = texinfoLump[faceLump[face].texinfo].textureVecsTexelsPerWorldUnits[1][1];
-        tv[1].z = texinfoLump[faceLump[face].texinfo].textureVecsTexelsPerWorldUnits[1][2];
-        level.Plane[plane].x0 = (dot(tv[1], level.Plane[plane].vertex1) + texinfoLump[faceLump[face].texinfo].textureVecsTexelsPerWorldUnits[1][3]) / 8;
-        level.Plane[plane].y0 = (dot(tv[0], level.Plane[plane].vertex1) + texinfoLump[faceLump[face].texinfo].textureVecsTexelsPerWorldUnits[0][3]) / 8;
-        level.Plane[plane].x1 = (dot(tv[1], level.Plane[plane].vertex3) + texinfoLump[faceLump[face].texinfo].textureVecsTexelsPerWorldUnits[1][3]) / 8;
-        level.Plane[plane].y1 = (dot(tv[0], level.Plane[plane].vertex3) + texinfoLump[faceLump[face].texinfo].textureVecsTexelsPerWorldUnits[0][3]) / 8;
+        
 
         // Floor UV rotated??? todo: find out why
         // quick fix
