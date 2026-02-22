@@ -20,41 +20,8 @@ NE_Animation *w_portalgun_fire1_animation;
 NE_Material *w_portalgun_tex, *portal_orange_tex, *portal_blue_tex;
 NE_Palette *w_portalgun_pal, *portal_orange_pal, *portal_blue_pal;
 
-//Map textures
-NE_Material* white_ceiling_tile002a, * white_floor_tile002a, * white_floor_tile002a_hd, * white_wall_tile003a, * white_wall_tile003a_hd, * white_wall_tile003c, * white_wall_tile003c_hd, * white_wall_tile003f, * white_wall_tile003f_hd, * black_floor_metal_001c, * black_floor_metal_001c_hd, * black_wall_metal_002a, * black_wall_metal_002a_hd, * black_wall_metal_002b, * black_wall_metal_002b_hd, * black_wall_metal_002c, * black_wall_metal_002c_hd, * Debug_Material, * debugempty, * toolstrigger;
-NE_Palette* white_ceiling_tile002aNEPalette, * white_floor_tile002aNEPalette, * white_floor_tile002a_hdNEPalette, * white_wall_tile003aNEPalette, * white_wall_tile003a_hdNEPalette, * white_wall_tile003cNEPalette, * white_wall_tile003c_hdNEPalette, * white_wall_tile003fNEPalette, * white_wall_tile003f_hdNEPalette, * black_floor_metal_001cNEPalette, * black_floor_metal_001c_hdNEPalette, * black_wall_metal_002aNEPalette, * black_wall_metal_002a_hdNEPalette, * black_wall_metal_002bNEPalette, * black_wall_metal_002b_hdNEPalette, * black_wall_metal_002cNEPalette, * black_wall_metal_002c_hdNEPalette, * toolstriggerNEPalette;
-//for when you can create multiple texture usig one pallete
-//NE_Palette* tile_cleanPal16, * metal_cleanPal16;
-
-
-
-void LoadPal16(NE_Material* material, void* texturelBin, NE_Palette* palette, void* paletteBin, int resolution)
-{
-    NE_MaterialTexLoad(material, NE_PAL16, resolution, resolution, NE_TEXTURE_WRAP_S | NE_TEXTURE_WRAP_T, texturelBin);
-    NE_PaletteLoad(palette, paletteBin, 16, NE_PAL16);
-    NE_MaterialSetPalette(material, palette);
-}
-void LoadPal4(NE_Material* material, void* texturelBin, NE_Palette* palette, void* paletteBin, int resolution)
-{
-    NE_MaterialTexLoad(material, NE_PAL4, resolution, resolution, NE_TEXTURE_WRAP_S | NE_TEXTURE_WRAP_T, texturelBin);
-    NE_PaletteLoad(palette, paletteBin, 4, NE_PAL4);
-    NE_MaterialSetPalette(material, palette);
-}
-//Pal4 but only 2 colors used
-void LoadPal2(NE_Material* material, void* texturelBin, NE_Palette* palette, void* paletteBin, int resolution)
-{
-    NE_MaterialTexLoad(material, NE_PAL4, resolution, resolution, NE_TEXTURE_WRAP_S | NE_TEXTURE_WRAP_T, texturelBin);
-    NE_PaletteLoad(palette, paletteBin, 2, NE_PAL4);
-    NE_MaterialSetPalette(material, palette);
-}
-//1:2 aspect ratio
-void LoadPal4_1_2(NE_Material* material, void* texturelBin, NE_Palette* palette, void* paletteBin, int resolution)
-{
-    NE_MaterialTexLoad(material, NE_PAL4, resolution / 2, resolution, NE_TEXTURE_WRAP_S | NE_TEXTURE_WRAP_T, texturelBin);
-    NE_PaletteLoad(palette, paletteBin, 4, NE_PAL4);
-    NE_MaterialSetPalette(material, palette);
-}
-
+NE_Material * Debug_Material, * debugempty, * toolstrigger;
+NE_Palette * toolstriggerNEPalette;
 
 NE_Material* loadTexture(char* name){
     // load Texture by searching for the Terures mane in textures[] and using the same index for neMaterials[] and nePallettes[]
@@ -81,65 +48,10 @@ NE_Material* loadTexture(char* name){
 
 // load textures
 // @param textureMode   0 = Low Resolution but many diffrent textures
-//                      1 = TODO High Resolution but more tepeating textures
+//                      1 = TODO High Resolution but more repeating textures
 //                      2 = TODO Portal 1 Textures
 void LoadTextures()
 {
-    white_ceiling_tile002a = NE_MaterialCreate();
-    white_floor_tile002a = NE_MaterialCreate();
-    white_wall_tile003a = NE_MaterialCreate();
-    white_wall_tile003c = NE_MaterialCreate();
-    white_wall_tile003f = NE_MaterialCreate();
-    black_floor_metal_001c = NE_MaterialCreate();
-    black_wall_metal_002a = NE_MaterialCreate();
-    black_wall_metal_002b = NE_MaterialCreate();
-    black_wall_metal_002c = NE_MaterialCreate();
-
-    //for when you can create multiple texture usig one pallete
-    //tile_cleanPal16 = NE_PaletteCreate();
-    //metal_cleanPal16 = NE_PaletteCreate();
-
-    white_ceiling_tile002aNEPalette = NE_PaletteCreate();
-    white_floor_tile002aNEPalette = NE_PaletteCreate();
-    white_wall_tile003aNEPalette = NE_PaletteCreate();
-    white_wall_tile003cNEPalette = NE_PaletteCreate();
-    white_wall_tile003fNEPalette = NE_PaletteCreate();
-    black_floor_metal_001cNEPalette = NE_PaletteCreate();
-    black_wall_metal_002aNEPalette = NE_PaletteCreate();
-    black_wall_metal_002bNEPalette = NE_PaletteCreate();
-    black_wall_metal_002cNEPalette = NE_PaletteCreate();
-
-    if (textureMode == 0)
-    {
-        LoadPal2(white_ceiling_tile002a, (u8*)white_ceiling_tile002a_tex_bin, white_ceiling_tile002aNEPalette, (void*)white_ceiling_tile002a_pal_bin, 64);
-
-        LoadPal4(white_floor_tile002a, (u8*)white_floor_tile002a_tex_bin, white_floor_tile002aNEPalette, (void*)white_floor_tile002a_pal_bin, 64);
-
-        LoadPal4_1_2(white_wall_tile003a, (u8*)white_wall_tile003a_tex_bin, white_wall_tile003aNEPalette, (void*)white_wall_tile003a_pal_bin, 64);
-
-        LoadPal4(white_wall_tile003c, (u8*)white_wall_tile003c_tex_bin, white_wall_tile003cNEPalette, (void*)white_wall_tile003c_pal_bin, 64);
-
-        LoadPal4(white_wall_tile003f, (u8*)white_wall_tile003f_tex_bin, white_wall_tile003fNEPalette, (void*)white_wall_tile003f_pal_bin, 32);
-
-        LoadPal4(black_floor_metal_001c, (u8*)black_floor_metal_001c_tex_bin, black_floor_metal_001cNEPalette, (void*)black_floor_metal_001c_pal_bin, 64);
-
-        LoadPal16(black_wall_metal_002a, (u8*)black_wall_metal_002a_tex_bin, black_wall_metal_002aNEPalette, (void*)black_wall_metal_002a_pal_bin, 256);
-
-        LoadPal16(black_wall_metal_002b, (u8*)black_wall_metal_002b_tex_bin, black_wall_metal_002bNEPalette, (void*)black_wall_metal_002b_pal_bin, 256);
-
-        LoadPal16(black_wall_metal_002c, (u8*)black_wall_metal_002c_tex_bin, black_wall_metal_002cNEPalette, (void*)black_wall_metal_002c_pal_bin, 256);
-    }
-    else if (textureMode == 1) 
-    {
-        LoadPal16(white_floor_tile002a, (u8*)white_floor_tile002a_hd_tex_bin, white_floor_tile002aNEPalette, (void*)white_floor_tile002a_hd_pal_bin, 512);
-
-        LoadPal16(white_wall_tile003a, (u8*)white_wall_tile003a_hd_tex_bin, white_wall_tile003aNEPalette, (void*)white_wall_tile003a_hd_pal_bin, 256);
-
-        LoadPal16(black_floor_metal_001c, (u8*)black_floor_metal_001c_hd_tex_bin, black_floor_metal_001cNEPalette, (void*)black_floor_metal_001c_hd_pal_bin, 256);
-
-        LoadPal16(black_wall_metal_002a, (u8*)black_wall_metal_002a_hd_tex_bin, black_wall_metal_002aNEPalette, (void*)black_wall_metal_002a_hd_pal_bin, 512);
-
-    }
     Debug_Material = NE_MaterialCreate();
     debugempty = NE_MaterialCreate();
     toolstrigger = NE_MaterialCreate();
@@ -155,8 +67,12 @@ void LoadTextures()
     NE_PaletteLoad(w_portalgun_pal, (void*)w_portalgun_pal_bin, 16, NE_PAL16);
     NE_MaterialSetPalette(w_portalgun_tex, w_portalgun_pal);
 
-    LoadPal4_1_2(portal_orange_tex, (u8*)portal_orange_tex_bin, portal_orange_pal, (void*)portal_orange_pal_bin, 64);
-    LoadPal4_1_2(portal_blue_tex, (u8*)portal_blue_tex_bin, portal_blue_pal, (void*)portal_blue_pal_bin, 64);
+    NE_MaterialTexLoad(portal_orange_tex, NE_PAL4, 32, 64, NE_TEXTURE_WRAP_S | NE_TEXTURE_WRAP_T, portal_orange_tex_bin);
+    NE_PaletteLoad(portal_orange_pal, portal_orange_pal_bin, 4, NE_PAL4);
+    NE_MaterialSetPalette(portal_orange_tex, portal_orange_pal);
+    NE_MaterialTexLoad(portal_blue_tex, NE_PAL4, 32, 64, NE_TEXTURE_WRAP_S | NE_TEXTURE_WRAP_T, portal_blue_tex_bin);
+    NE_PaletteLoad(portal_blue_pal, portal_blue_pal_bin, 4, NE_PAL4);
+    NE_MaterialSetPalette(portal_blue_tex, portal_blue_pal);
 
     //transparent
     //NE_MaterialTexLoad(portal_orange_tex, NE_PAL4, 32, 64, NE_TEXTURE_WRAP_S | NE_TEXTURE_WRAP_T | NE_TEXTURE_COLOR0_TRANSPARENT, (u8*)portal_orange_tex_bin);
@@ -247,35 +163,9 @@ int loadLevelVmf(char* levelName) {
             float vaxis = (float)atof(tempvaxis);
             float vscale = (float)atof(tempvscale);
 
-            //convert string material names to materials used in LoadTextures
-            if (strcmp(tempMaterial, "WHITE_CEILING_TILE002A") == 0) {
-                tempPlane.material = white_ceiling_tile002a;
-            }
-            else if (strcmp(tempMaterial, "WHITE_FLOOR_TILE002A") == 0) {
-                tempPlane.material = white_floor_tile002a;
-            }
-            else if (strcmp(tempMaterial, "WHITE_WALL_TILE003A") == 0) {
-                tempPlane.material = white_wall_tile003a;
-            }
-            else if (strcmp(tempMaterial, "WHITE_WALL_TILE003C") == 0) {
-                tempPlane.material = white_wall_tile003c;
-            }
-            else if (strcmp(tempMaterial, "WHITE_WALL_TILE003F") == 0) {
-                tempPlane.material = white_wall_tile003f;
-            }
-            else if (strcmp(tempMaterial, "BLACK_FLOOR_METAL_001C") == 0) {
-                tempPlane.material = black_floor_metal_001c;
-            }
-            else if (strcmp(tempMaterial, "BLACK_WALL_METAL_002A") == 0) {
-                tempPlane.material = black_wall_metal_002a;
-            }
-            else if (strcmp(tempMaterial, "BLACK_WALL_METAL_002B") == 0) {
-                tempPlane.material = black_wall_metal_002b;
-            }
-            else if (strcmp(tempMaterial, "BLACK_WALL_METAL_002C") == 0) {
-                tempPlane.material = black_wall_metal_002c;
-            }
-            else if (strcmp(tempMaterial, "TOOLSNODRAW") == 0)
+            // load apropreate Texture
+            tempPlane.material = loadTexture(tempMaterial);
+            if (strcmp(tempMaterial, "TOOLSNODRAW") == 0)
                 tempPlane.isDrawn = 0;
                 //if material not recognized use debug texture
             else {
@@ -283,21 +173,6 @@ int loadLevelVmf(char* levelName) {
                 if (i >= 3000)
                     break;
                 //tempPlane.isDrawn = 0;
-            }
-
-            //override for hd textures
-            if (textureMode == 1)
-            {
-                if (strcmp(tempMaterial, "WHITE_CEILING_TILE002A") == 0)
-                    tempPlane.material = white_floor_tile002a;
-                else if (strcmp(tempMaterial, "WHITE_WALL_TILE003C") == 0)
-                    tempPlane.material = white_wall_tile003a;
-                else if (strcmp(tempMaterial, "WHITE_WALL_TILE003F") == 0)
-                    tempPlane.material = white_wall_tile003a;
-                else if (strcmp(tempMaterial, "BLACK_WALL_METAL_002B") == 0)
-                    tempPlane.material = black_wall_metal_002a;
-                else if (strcmp(tempMaterial, "BLACK_WALL_METAL_002C") == 0)
-                    tempPlane.material = black_wall_metal_002a;
             }
 
 
