@@ -1,3 +1,4 @@
+#!/bin/bash
 # usage ./assets.h-helper-script.sh textureName gritFile assets/Textures source
 TextureName=$1
 TextureBaseFolder=$3
