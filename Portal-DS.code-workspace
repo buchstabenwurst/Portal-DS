@@ -14,7 +14,32 @@
 			"trig_lut.h": "c",
 			"black_wall_metal_002c_pal_bin.h": "c",
 			"black_floor_metal_001c_tex_bin.h": "c",
-			"cstdio": "c"
-		}
+			"cstdio": "c",
+			"format": "c",
+			"queue": "c",
+			"stack": "c",
+			"thread": "c",
+			"vector": "c",
+			"sqstdsystem.h": "c",
+			"sqstdblob.h": "c",
+			"squirrel.h": "c",
+			"dirent.h": "c",
+			"stdio.h": "c",
+			"stdlib.h": "c",
+			"chrono": "c",
+			"text_encoding": "c",
+			"typeindex": "c",
+			"typeinfo": "c",
+			"functional": "c"
+		},
+		"C_Cpp.default.includePath": [
+			"/opt/wonderful/thirdparty/blocksds/external/nitro-engine/include",
+			"/opt/wonderful/thirdparty/blocksds/core/libs/dswifi/include",
+			"/opt/wonderful/thirdparty/blocksds/core/libs/libnds/include",
+			"/opt/wonderful/thirdparty/blocksds/core/libs/libteak/include",
+			"/opt/wonderful/thirdparty/blocksds/core/libs/libxm7/include",
+			"/opt/wonderful/thirdparty/blocksds/core/libs/maxmod/include",
+			"/opt/wonderful/thirdparty/blocksds/core/libs/version/include"
+		]
 	}
 }
