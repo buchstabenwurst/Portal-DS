@@ -22,7 +22,7 @@ cd ../../
 make
 ```
 ## Installation
-[Download nightly Build](https://nightly.link/buchstabenwurst/Portal-DS/workflows/c-cpp/master/Portal%20DS.zip)
+[Download nightly Build](https://nightly.link/buchstabenwurst/Portal-DS/workflows/c-cpp/level-scripts/Portal%20DS.zip)
 
 There are currently no Releases
 
