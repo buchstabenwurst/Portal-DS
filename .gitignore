@@ -370,9 +370,9 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 *.vmx
-*.xcf
 
 #custom
+# *.xcf
 *.vvd
 *.mdl
 *.vtx
