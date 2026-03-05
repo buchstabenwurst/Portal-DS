@@ -200,7 +200,7 @@ endif
 
 $(ROM): $(ELF)
 	@rsync -ruE --mkpath --delete --ignore-missing-args $(CURDIR)/assets/Maps/*.vmf $(CURDIR)/assets/Maps/*.bsp $(CURDIR)/nitrofiles/levels
-	@rsync -ruE --mkpath --delete --ignore-missing-args $(CURDIR)/assets/scripts/vscripts/*.nut $(CURDIR)/nitrofiles/scripts/vscripts/
+	@rsync -ruE --mkpath --delete --ignore-missing-args $(CURDIR)/assets/scripts/vscripts/* $(CURDIR)/nitrofiles/scripts/vscripts/
 	@echo "  NDSTOOL $@"
 	$(V)$(BLOCKSDS)/tools/ndstool/ndstool -c $@ \
 		-7 $(ARM7ELF) -9 $(ELF) \
