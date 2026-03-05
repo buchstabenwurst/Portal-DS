@@ -9,8 +9,11 @@ Basename=$(basename -s .png $1.png)
 
 TextureFormatGrit=$(grep -v '^#' ./$2)
 NumColors=$(echo ${TextureFormatGrit#*-pn} | cut -f 1 -d " ")
+ForceTransparency=$(echo ${TextureFormatGrit#*-gT} | cut -f 1 -d " ")
 TextureFormatGrit=$(echo ${TextureFormatGrit#*-gB} | cut -f 1 -d " ")
+TextureFlags="NE_TEXTURE_WRAP_S | NE_TEXTURE_WRAP_T"
 re='^[0-9]+$'
+
 #TODO fix "if NumColors is a number"
 case $TextureFormatGrit in
   1)
@@ -43,11 +46,13 @@ case $TextureFormatGrit in
 
   16)
     TextureFormat=NE_A1RGB5
+    TextureFlags=$TextureFlags" | NE_TEXTURE_COLOR0_TRANSPARENT"
     NumColors=-1
     ;;
 
   a5i3)
     TextureFormat=NE_A5PAL8
+    TextureFlags=$TextureFlags" | NE_TEXTURE_COLOR0_TRANSPARENT"
     if ! [[ $NumColors =~ $re ]] ; then
       NumColors=8
     fi
@@ -55,11 +60,16 @@ case $TextureFormatGrit in
 
   a3i5)
     TextureFormat=NE_A3PAL32
+    TextureFlags=$TextureFlags" | NE_TEXTURE_COLOR0_TRANSPARENT"
     if ! [[ $NumColors =~ $re ]] ; then
       NumColors=32
     fi
     ;;
 esac
+
+if [[ $ForceTransparency = "!" ]] ; then
+  TextureFlags=$TextureFlags" | NE_TEXTURE_COLOR0_TRANSPARENT"
+fi
 
 sed -i "$(wc -l < $Sorce/assetsTemplate.h)i\\#include \"$IngameName.h\"\\" $Sorce/assets.h
 # sed -i "7i\\MaterialMetadata Material_$FriendlyIngameName;\\" $Sorce/assetsArray.h
@@ -76,7 +86,7 @@ else
 fi
 echo -n $NumColors"," >> $Sorce/assetsTMP.h
 echo -n $TextureFormat, >> $Sorce/assetsTMP.h
-echo -n "NE_TEXTURE_WRAP_S | NE_TEXTURE_WRAP_T" >> $Sorce/assetsTMP.h
+echo -n $TextureFlags >> $Sorce/assetsTMP.h
 echo -n "};" >> $Sorce/assetsTMP.h
 
 sed -i "$(wc -l < $Sorce/assets.h)i\\$(cat $Sorce/assetsTMP.h)\\" $Sorce/assets.h
