@@ -35,7 +35,7 @@ int sensitivityVertical = 140;
 
 bool isConsoleOpen = false;
 bool debugText = false;
-bool debugVision = false;
+bool debugVision = true;
 
 HSQUIRRELVM squirrelvm;
 Level level;
@@ -61,9 +61,17 @@ void printfWarning(const char* message, ...){
     printf("\x1b[37;1m"); // reset terminal color to white
 }
 
-void teleport(PLAYER* player, Vector3 position, Vector3 rotation){
-    player->position = position;
-    player->rotation = rotation;
+void printMemory(char* file, char* func, int line){
+    // printf("[%s] line %d Free Memory: %d%%\n", func, line, NE_TextureFreeMemPercent());
+}
+
+void teleport(char* target, Vector3 position, Vector3 rotation){
+    if(strcmp(target, "!player") == 0){
+        localPlayer.position = position;
+        localPlayer.rotation = rotation;
+    }else{
+        printfWarning("Teleport of non-Player Entities not supported yet");
+    }
 }
 
 void addCube(Vector3 position) {
@@ -78,11 +86,14 @@ void addCube(Vector3 position) {
     lastCube++;
 }
 
-void registerEntity(char* className, char* targetName, void* entity){
+void registerEntity(char* className, char* targetName, void* entity, Vector3 position, Vector3 rotation){
     level.entities[level.currentEntity].className = className;
     level.entities[level.currentEntity].targetName = targetName;
+    level.entities[level.currentEntity].position = position;
+    level.entities[level.currentEntity].rotation = rotation;
     level.entities[level.currentEntity].child = entity;
     level.currentEntity++;
+    // printf("[registerEntity] %d\n", level.currentEntity);
 }
 
 SQInteger getMapName(HSQUIRRELVM v){
@@ -91,11 +102,13 @@ SQInteger getMapName(HSQUIRRELVM v){
     return 1; //1 because 1 value is returned
 }
 
-int findEntityByName(char* name, Entity* entity){
+int findEntityByName(char* name, Entity** entity){
     for(int i=0; i<level.currentEntity; i++){
-        // printf("%s\n", level.entities[i].name);
+        // printf("%d\n", level.currentEntity);
         if(strcmp(level.entities[i].targetName, name) == 0){
-            *entity = level.entities[i];
+            // printf("%d\n", i);
+            // printf("%x\n", &level.entities[i]);
+            *entity = &level.entities[i];
             return 1;
         }
     }
@@ -103,26 +116,66 @@ int findEntityByName(char* name, Entity* entity){
 	return 0;
 }
 
-SQInteger entFire(HSQUIRRELVM v){
+int entFire(char* entityName,char *action, ...){
+    printf("\n%s %s\n", entityName, action);
+    Entity* entity;
+	if(findEntityByName(entityName, &entity)){
+        printf("[EntFire] found %s.\n", entityName);
+        if(strcmp(entity->className, "point_teleport") == 0){
+            pointTeleport* teleportEntity = entity->child;
+            if(strcmp(action, "Teleport") == 0)
+                teleport(teleportEntity->target, entity->position, entity->rotation);
+        }
+        else if(strcmp(action, "RunScriptCode") == 0){
+                char* function = malloc(100);
+                va_list args;
+                va_start(args, action);
+                function = va_arg(args, char*);
+                va_end(args);
+                function[strlen(function) - 2] = '\0'; // remove the "()"
+                printf("calling funcion: %s\n", function);
+                callSquirrel(squirrelvm, function);
+                free(function);
+            
+        }
+        else if(strcmp(action, "MoveToPathNode") == 0){
+            va_list args;
+            va_start(args, action);
+            char* target = va_arg(args, char*);
+            va_end(args);
+            // printf("\n%s\n", target);
+
+            funcTracktrain* trackTrain = entity->child;
+            Entity* pathNode;
+            if(!findEntityByName(target, &pathNode)){
+                    printfWarning("[MoveToPathNode] %s tried to move to node %s but it was not found", entityName, target);
+                }
+            trackTrain->nextNode = pathNode;
+
+            // Entity* elevatorEnt; 
+            // findEntityByName("Arrival_Logic-elevator_1_body", &elevatorEnt);
+            // elevatorEnt->position = pathNode->position;
+        }
+        else{
+            printfWarning("Warning. Tried to fire Trigger but function is not implimented yet: %s %s\n", entityName, action);
+        }
+	}else{
+		printfWarning("[EntFire] Warning %s not found :(.\n", entityName);
+	}
+}
+
+SQInteger entFireSquirrel(HSQUIRRELVM v){
     // char* entityName, char* action, int optionalParameter, int delay
     const SQChar* entityName, *action;
     SQInteger delay, optionalParameter;
     sq_getstring(v, 2, &entityName);
     sq_getstring(v, 3, &action);
 
-    Entity entity;
-	if(findEntityByName(entityName, &entity)){
-		printf("[EntFire] found %s.\n", entityName);
-        if(strcmp(entity.className, "point_teleport") == 0){
-            pointTeleport* teleportEntity = entity.child;
-            if(strcmp(action, "Teleport") == 0)
-                teleport(&localPlayer, teleportEntity->position, teleportEntity->rotation);
-        }
-	}else{
-		printfWarning("[EntFire] Warning %s not found :(.\n", entityName);
-	}
+    // printf("\n%s %s\n",entityName, action);
+    entFire(entityName, action);
     return 0;
 }
+
 
 void printfunc(HSQUIRRELVM SQ_UNUSED_ARG(v),const SQChar *s,...)
 {
@@ -162,6 +215,27 @@ int callSquirrel(HSQUIRRELVM vm, const char* function){
 	return ret;
 }
 
+void moveTrains(time_t time){
+    // somehow move the elevator, probaply  do somethung universally usable from "{Entity} MoveToPathNode {Entity_path_1}"
+    // mabe timer?
+    Entity* elevatorEnt; 
+    findEntityByName("Arrival_Logic-elevator_1", &elevatorEnt);
+    funcTracktrain* trackTrain = elevatorEnt->child;
+    if(trackTrain->nextNode == NULL)
+        return;
+    if(trackTrain->isMoving){
+
+        trackTrain->startSpeed;
+        
+        Entity* pathNode = trackTrain->nextNode;
+        
+        // Entity* elevatorEntModel; 
+        // findEntityByName("Arrival_Logic-elevator_1_body", &elevatorEntModel);
+        // elevatorEntModel->position = pathNode->position;
+        printf("%x\n", trackTrain->nextNode->targetName);
+    }
+}
+
 int main(void)
 {
     irqEnable(IRQ_HBLANK);
@@ -186,6 +260,9 @@ int main(void)
 	vramSetBankH(VRAM_H_SUB_BG);
 	vramSetBankI(VRAM_I_SUB_BG_0x06208000);
     keyboard = 	keyboardDemoInit();
+
+    // enable the Exception Handler
+    defaultExceptionHandler();
 
     //for (int i = 0; i<100; i++) {
     //    printf("HelloWorld");
@@ -224,14 +301,13 @@ int main(void)
 
     // register c functions
     register_global_func(squirrelvm, getMapName, "GetMapName");
-    register_global_func(squirrelvm, entFire, "EntFire");
+    register_global_func(squirrelvm, entFireSquirrel, "EntFire");
 
     sqstd_dofile(squirrelvm, "nitro:/scripts/vscripts/hello.nut", false, true);
-    sqstd_dofile(squirrelvm, "nitro:/scripts/vscripts/sp_transition_list.nut", false, true);
     
     callSquirrel(squirrelvm, "hi");
 	
-    // entFire("player", "destroy", 0, 0);
+    // entFireSquirrel("player", "destroy", 0, 0);
 
     mkdir("/_nds", 0777);
     mkdir("/_nds/PortalDS", 0777);
@@ -244,7 +320,7 @@ int main(void)
 
     // Background
     NE_ClearColorSet(NE_Black, 31, 63);
-    // ToggleConsole();
+    ToggleConsole();
 
     int fpscount = 0;
     // This is used to see if second has changed
@@ -261,9 +337,10 @@ int main(void)
     // loadLevelVmf("test_map");
     LoadMisc();
     loadLevelBsp("test_map");
-    localPlayer.position.x = 0;
-    localPlayer.position.y = 0;
-    localPlayer.position.z += 250;
+    // localPlayer.position.x = 0;
+    // localPlayer.position.y = 0;
+    // localPlayer.position.z += 250;
+    // entFire("@arrival_teleport", "Teleport", 0, 0);
 
     // int freemem = NE_TextureFreeMemPercent();
     Vector3 position;
@@ -276,7 +353,7 @@ int main(void)
 
         //FPS counter
         // Get time
-        //time_t unixTime = time(NULL);
+        time_t unixTime = time(NULL);
         //struct tm* timeStruct = gmtime((const time_t*)&unixTime);
         //seconds = timeStruct->tm_sec;
         //
@@ -349,14 +426,19 @@ int main(void)
 
         if (keys_down & KEY_R && !(keys & KEY_SELECT)) 
         {
+            NE_ModelSetAnimation(elevator_b_model, elevator_b_doorsopen);
+            NE_ModelAnimStart(elevator_b_model, NE_ANIM_ONESHOT, floattof32(1));
             NE_ModelAnimStart(w_portalgun_model, NE_ANIM_ONESHOT, floattof32(1));
-            shootPortal(0);
+            printf("[GetMapName] %s\n", level.name);
+            // shootPortal(0);
         }
 
         if (keys_down & KEY_L && !(keys & KEY_SELECT)) 
         {
+            NE_ModelSetAnimation(elevator_b_model, elevator_b_doorsclose);
+            NE_ModelAnimStart(elevator_b_model, NE_ANIM_ONESHOT, floattof32(1));
             NE_ModelAnimStart(w_portalgun_model, NE_ANIM_ONESHOT, floattof32(1));
-            shootPortal(1);
+            // shootPortal(1);
         }
 
 
@@ -384,6 +466,7 @@ int main(void)
             break;
 
         //NE_ClearColorSet(NE_White, 31, 63);
+        moveTrains(unixTime);
         doPhysics();
         NE_Process(Draw3DScene);
 

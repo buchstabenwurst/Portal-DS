@@ -6,9 +6,9 @@
 
 extern NE_Model* debug_vision_model, *portal_orange_model, *portal_blue_model;
 
-extern NE_Model *w_portalgun_model;
+extern NE_Model *w_portalgun_model, *elevator_b_model;
 
-extern NE_Animation *w_portalgun_fire1_animation;
+extern NE_Animation *w_portalgun_fire1_animation, *elevator_b_doorsopen, *elevator_b_doorsclose;
 
 extern NE_Material *w_portalgun_tex;
 extern NE_Palette *w_portalgun_pal;

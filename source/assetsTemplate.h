@@ -36,6 +36,9 @@ typedef struct
 //Animated Models and Animations
 #include "w_portalgun_dsm_bin.h"
 #include "w_portalgun_fire1_dsa_bin.h"
+#include "elevator_b_dsm_bin.h"
+#include "elevator_b_elevator_b_doorsopen_dsa_bin.h"
+#include "elevator_b_elevator_b_doorsclose_dsa_bin.h"
 
 // Auto Generated below
 

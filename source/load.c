@@ -1,5 +1,7 @@
 #include <NEMain.h>
 #include <string.h>
+#include <squirrel.h>
+#include <sqstdio.h>
 #include "assetsArray.h"
 #include "main.h"
 #include "load.h"
@@ -11,10 +13,10 @@
 NE_Model* debug_vision_model, *portal_orange_model, *portal_blue_model;
 
 //Animated models
-NE_Model *w_portalgun_model;
+NE_Model *w_portalgun_model, *elevator_b_model;
 
 //Animations
-NE_Animation *w_portalgun_fire1_animation;
+NE_Animation *w_portalgun_fire1_animation, *elevator_b_doorsopen, *elevator_b_doorsclose;
 
 //Model textues
 NE_Material *w_portalgun_tex, *portal_orange_tex, *portal_blue_tex;
@@ -28,7 +30,6 @@ NE_Material* loadTexture(char* name){
     for(int i = 0; i < sizeof(textures)/sizeof(MaterialMetadata); i++){
         if (strcmp(textures[i].name, name) == 0){
             if(!alreadyLoadedTextures[i]){
-                printf(" load.c > Loaded %s\n",textures[i].name);
                 *neMaterials[i] = NE_MaterialCreate();
                 *nePallettes[i] = NE_PaletteCreate();
                 NE_MaterialTexLoad(*neMaterials[i], textures[i].textureFormat, textures[i].x, textures[i].y, textures[i].textureFlags, textures[i].textureData);
@@ -39,7 +40,9 @@ NE_Material* loadTexture(char* name){
                         NE_MaterialSetPalette(*neMaterials[i], *nePallettes[i]);
                     }
                 alreadyLoadedTextures[i] = true;
-                }
+                // printf("[loadTexture] Loaded %s\n",textures[i].name);
+                // printf(" Pallette Memory Used: %d%%\n Texture Memory Used: %d%%\n",100-NE_PaletteFreeMemPercent(), 100-NE_TextureFreeMemPercent());
+            }
             return *neMaterials[i];
         }
     }
@@ -66,6 +69,7 @@ void LoadTextures()
     NE_MaterialTexLoad(w_portalgun_tex, NE_PAL16, 128, 128, NE_TEXTURE_WRAP_S | NE_TEXTURE_WRAP_T, (u8*)w_portalgun_tex_bin);
     NE_PaletteLoad(w_portalgun_pal, (void*)w_portalgun_pal_bin, 16, NE_PAL16);
     NE_MaterialSetPalette(w_portalgun_tex, w_portalgun_pal);
+    loadTexture("MODELS/ELEVATOR/ELEVATOR_MAIN");
 
     NE_MaterialTexLoad(portal_orange_tex, NE_PAL4, 32, 64, NE_TEXTURE_WRAP_S | NE_TEXTURE_WRAP_T, portal_orange_tex_bin);
     NE_PaletteLoad(portal_orange_pal, portal_orange_pal_bin, 4, NE_PAL4);
@@ -364,6 +368,11 @@ int loadLevelBsp(char* levelName) {
         levelFile = fopen(fileLocation, "rb");
     }
 
+
+    // printf("[load] %s\n", levelName);
+    level.name = levelName;
+    printMemory(__FILE__, __func__, __LINE__);
+
     // Read the VBSP Header
     struct dheader_t header;
     fread(&header, 1, sizeof(struct dheader_t), levelFile);
@@ -536,7 +545,7 @@ int loadLevelBsp(char* levelName) {
         plane++;
     }
 
-
+    printMemory(__FILE__, __func__, __LINE__);
 
     // Read models
     struct dmodel_t modelLump[header.lumps[LUMP_MODELS].filelen / sizeof(struct dmodel_t)];
@@ -594,6 +603,7 @@ int loadLevelBsp(char* levelName) {
             printf("info_player_start:\n%f\n%f\n%f\n", tmpx, tmpy, tmpz);
             // go to where we left off
             fsetpos(levelFile, &fpos);
+            printMemory(__FILE__, __func__, __LINE__);
         }
         if (strcmp(word, "\"trigger_once\"") == 0){ // Read Trigger_once
             char model[64];
@@ -631,7 +641,7 @@ int loadLevelBsp(char* levelName) {
                 if(strcmp(word, "\"OnStartTouch\"") == 0){
                     fseek(levelFile, 1, SEEK_CUR);
                     fscanf(levelFile, "%[^\"]", &input);
-                    printf("%s\n",input);
+                    // printf("%s\n",input);
                     break;
 
                 }
@@ -653,22 +663,27 @@ int loadLevelBsp(char* levelName) {
             //  position.x = 256;
             //  position.y = 0;
             //  position.z = 0;
+
+            char* namePermanent = malloc(sizeof(char) * (strlen(name) + 1));
+            strcpy(namePermanent, name);
+
             addHitbox(size,&position, &rotation, false);
             level.allHitboxes[level.currentHitbox].attachedTrigger = malloc(sizeof(trigger));
-            level.allHitboxes[level.currentHitbox].attachedTrigger->input = (char*)malloc(strlen(input) * sizeof(char));
+            level.allHitboxes[level.currentHitbox].attachedTrigger->input = (char*)malloc((strlen(input) + 1) * sizeof(char));
             strcpy(level.allHitboxes[level.currentHitbox].attachedTrigger->input, input);
             
             level.allHitboxes[level.currentHitbox].isTrigger = true;
             level.allHitboxes[level.currentHitbox].attachedTrigger->mode = 1; // set mode to trigger_once
             level.allHitboxes[level.currentHitbox].attachedTrigger->alreadyTriggered = false;
 
-            registerEntity("trigger_once", name, level.allHitboxes[level.currentHitbox].attachedTrigger);
+            registerEntity("trigger_once", namePermanent, level.allHitboxes[level.currentHitbox].attachedTrigger, position, rotation);
 
             //printf("\n\n%s\n%s\n\n\n", level.allHitboxes[level.currentHitbox].attachedTrigger->input, input);
             // printf("%d", level.currentHitbox);
             // go to where we left off
             // fsetpos(levelFile, &fpos);
 
+            printMemory(__FILE__, __func__, __LINE__);
         } 
         if (strcmp(word, "\"point_teleport\"") == 0){ // Read point_teleport
             // remember current cursor position
@@ -698,34 +713,211 @@ int loadLevelBsp(char* levelName) {
                 }
             }
             
-            char* namePermanent = malloc(sizeof(char) * strlen(name));
+            char* namePermanent = malloc(sizeof(char) * (strlen(name) + 1));
             strcpy(namePermanent, name);
-            char* targetPermanent = malloc(sizeof(char) * strlen(target));
+            char* targetPermanent = malloc(sizeof(char) * (strlen(target) + 1));
             strcpy(targetPermanent, target);
 
             pointTeleport* entity = malloc(sizeof(pointTeleport));
-            entity->position = position;
-            entity->rotation = rotation;
             entity->target = targetPermanent;
             // printf("\n\n%s\n\n\n",name);
             // printf("\n\n%s\n\n\n",target);
-            registerEntity("point_teleport", namePermanent, entity);
+            registerEntity("point_teleport", namePermanent, entity, position, rotation);
             
             // go to where we left off
             fsetpos(levelFile, &fpos);
+            printMemory(__FILE__, __func__, __LINE__);
+        }
+        if (strcmp(word, "\"logic_script\"") == 0){ // Read logic_script
+            // remember current cursor position
+            fgetpos(levelFile, &fpos);
+            // go to the position value
+            fsetpos(levelFile, &fStartPos);
+            Vector3 position, rotation;
+            char name[64], script[32];
+            while(strcmp(word, "}"))
+            {
+                fscanf(levelFile, "%s", word);
+                if(strcmp(word, "\"origin\"") == 0){
+                    fseek(levelFile, 1, SEEK_CUR);
+                    fscanf(levelFile, "%f %f %f", &position.x, &position.y, &position.z);
+                }else
+                if(strcmp(word, "\"targetname\"") == 0){
+                    fseek(levelFile, 1, SEEK_CUR);
+                    fscanf(levelFile, "%[^\"]", &name);
+                }else
+                if(strcmp(word, "\"vscripts\"") == 0){
+                    fseek(levelFile, 1, SEEK_CUR);
+                    fscanf(levelFile, "%[^\"]", &script);
+                }else
+                if(strcmp(word, "\"angles\"") == 0){
+                    fseek(levelFile, 1, SEEK_CUR);
+                    fscanf(levelFile, "%f %f %f", &rotation.x, &rotation.y, &rotation.z);
+                }
+            }
+            
+            // load the script file
+            char* location = "nitro:/scripts/vscripts/";
+            snprintf(fileLocation, strlen(location)+strlen(script)+1, "%s%s", location, script);
+            
+            // check if file exists and load it
+            FILE *file;
+            if ((file = fopen(fileLocation, "r")))
+            {
+                fclose(file);
+                sqstd_dofile(squirrelvm, fileLocation, false, false);
+    
+                char* namePermanent = malloc(sizeof(char) * (strlen(name) + 1));
+                strcpy(namePermanent, name);
+    
+                // printf("\n\n%s\n\n\n",fileLocation);
+                registerEntity("logic_script", namePermanent, NULL, position, rotation);
+                
+            }
+            // go to where we left off
+            fsetpos(levelFile, &fpos);
+            printMemory(__FILE__, __func__, __LINE__);
+        }
+        if (strcmp(word, "\"func_tracktrain\"") == 0){ // Read func_tracktrain
+            // remember current cursor position
+            fgetpos(levelFile, &fpos);
+            // go to the position value
+            fsetpos(levelFile, &fStartPos);
+            Vector3 position, rotation;
+            int startSpeed;
+            char name[64], target[32];
+            while(strcmp(word, "}"))
+            {
+                fscanf(levelFile, "%s", word);
+                if(strcmp(word, "\"origin\"") == 0){
+                    fseek(levelFile, 1, SEEK_CUR);
+                    fscanf(levelFile, "%f %f %f", &position.x, &position.y, &position.z);
+                }else
+                if(strcmp(word, "\"targetname\"") == 0){
+                    fseek(levelFile, 1, SEEK_CUR);
+                    fscanf(levelFile, "%[^\"]", &name);
+                }else
+                if(strcmp(word, "\"target\"") == 0){
+                    fseek(levelFile, 1, SEEK_CUR);
+                    fscanf(levelFile, "%[^\"]", &target);
+                }else
+                if(strcmp(word, "\"angles\"") == 0){
+                    fseek(levelFile, 1, SEEK_CUR);
+                    fscanf(levelFile, "%f %f %f", &rotation.x, &rotation.y, &rotation.z);
+                }else
+                if(strcmp(word, "\"startspeed\"") == 0){
+                    fseek(levelFile, 1, SEEK_CUR);
+                    fscanf(levelFile, "%d", startSpeed);
+                }
+            }
+
+            char* namePermanent = malloc(sizeof(char) * (strlen(name) + 1));
+            strcpy(namePermanent, name);
+
+            funcTracktrain* entity = malloc(sizeof(funcTracktrain));
+            entity->startSpeed = startSpeed;
+
+            registerEntity("func_tracktrain", namePermanent, entity, position, rotation);
+            
+            // go to where we left off
+            fsetpos(levelFile, &fpos);
+            printMemory(__FILE__, __func__, __LINE__);
+        }
+        if (strcmp(word, "\"path_track\"") == 0){ // Read path_track
+            // remember current cursor position
+            fgetpos(levelFile, &fpos);
+            // go to the position value
+            fsetpos(levelFile, &fStartPos);
+            Vector3 position, rotation;
+            char name[64], target[32];
+            while(strcmp(word, "}"))
+            {
+                fscanf(levelFile, "%s", word);
+                if(strcmp(word, "\"origin\"") == 0){
+                    fseek(levelFile, 1, SEEK_CUR);
+                    fscanf(levelFile, "%f %f %f", &position.x, &position.y, &position.z);
+                }else
+                if(strcmp(word, "\"targetname\"") == 0){
+                    fseek(levelFile, 1, SEEK_CUR);
+                    fscanf(levelFile, "%[^\"]", &name);
+                }else
+                if(strcmp(word, "\"target\"") == 0){
+                    fseek(levelFile, 1, SEEK_CUR);
+                    fscanf(levelFile, "%[^\"]", &target);
+                }else
+                if(strcmp(word, "\"angles\"") == 0){
+                    fseek(levelFile, 1, SEEK_CUR);
+                    fscanf(levelFile, "%f %f %f", &rotation.x, &rotation.y, &rotation.z);
+                }
+            }
+
+            char* namePermanent = malloc(sizeof(char) * (strlen(name) + 1));
+            strcpy(namePermanent, name);
+
+            registerEntity("path_track", namePermanent, NULL, position, rotation);
+            
+            // go to where we left off
+            fsetpos(levelFile, &fpos);
+            printMemory(__FILE__, __func__, __LINE__);
+        }
+        if (strcmp(word, "\"prop_dynamic\"") == 0){ // Read prop_dynamic
+            // remember current cursor position
+            fgetpos(levelFile, &fpos);
+            // go to the position value
+            fsetpos(levelFile, &fStartPos);
+            Vector3 position, rotation;
+            char name[64], target[32], model[64];
+            while(strcmp(word, "}"))
+            {
+                fscanf(levelFile, "%s", word);
+                if(strcmp(word, "\"origin\"") == 0){
+                    fseek(levelFile, 1, SEEK_CUR);
+                    fscanf(levelFile, "%f %f %f", &position.x, &position.y, &position.z);
+                }else
+                if(strcmp(word, "\"targetname\"") == 0){
+                    fseek(levelFile, 1, SEEK_CUR);
+                    fscanf(levelFile, "%[^\"]", &name);
+                }else
+                if(strcmp(word, "\"target\"") == 0){
+                    fseek(levelFile, 1, SEEK_CUR);
+                    fscanf(levelFile, "%[^\"]", &target);
+                }else
+                if(strcmp(word, "\"angles\"") == 0){
+                    fseek(levelFile, 1, SEEK_CUR);
+                    fscanf(levelFile, "%f %f %f", &rotation.x, &rotation.y, &rotation.z);
+                }else
+                if(strcmp(word, "\"model\"") == 0){
+                    fseek(levelFile, 1, SEEK_CUR);
+                    fscanf(levelFile, "%[^\"]", &model);
+                }
+            }
+
+            char* namePermanent = malloc(sizeof(char) * (strlen(name) + 1));
+            strcpy(namePermanent, name);
+            
+            // printf("%s\n",model);
+            // Model* entity = malloc(sizeof(Model));
+            // entity->position = position;
+            // entity->rotation = rotation;
+            // TODO: include modelname in entity
+            registerEntity("prop_dynamic", namePermanent, NULL, position, rotation);
+
+            // go to where we left off
+            fsetpos(levelFile, &fpos);
+            printMemory(__FILE__, __func__, __LINE__);
         }
     }
     
 
     // printf("%d\n", faceLump[0].numedges);
     level.planeCount = plane;
-    level.name = levelName;
     
     fclose(levelFile);
 }
 
 void LoadMisc (void)
 {
+    // Portalgun
     w_portalgun_model = NE_ModelCreate(NE_Animated);
     w_portalgun_fire1_animation = NE_AnimationCreate();
     NE_AnimationLoad(w_portalgun_fire1_animation, w_portalgun_fire1_dsa_bin);
@@ -734,6 +926,17 @@ void LoadMisc (void)
     NE_ModelSetMaterial(w_portalgun_model, w_portalgun_tex);
     NE_ModelScaleI(w_portalgun_model, floatToFixed(3, LEVEL_RENDER_SIZE), floatToFixed(3, LEVEL_RENDER_SIZE), floatToFixed(3, LEVEL_RENDER_SIZE));
     NE_ModelSetCoord(w_portalgun_model, 0, 0.1, 0);
+
+    // Entrance/Exit Elevator
+    elevator_b_model = NE_ModelCreate(NE_Animated);
+    elevator_b_doorsopen = NE_AnimationCreate();
+    elevator_b_doorsclose = NE_AnimationCreate();
+    NE_AnimationLoad(elevator_b_doorsopen, elevator_b_elevator_b_doorsopen_dsa_bin);
+    NE_AnimationLoad(elevator_b_doorsclose, elevator_b_elevator_b_doorsclose_dsa_bin);
+    NE_ModelLoadDSM(elevator_b_model, elevator_b_dsm_bin);
+    NE_ModelSetAnimation(elevator_b_model, elevator_b_doorsopen);
+    NE_ModelSetMaterial(elevator_b_model, NEMaterial_models_elevator_elevator_main);
+    NE_ModelScaleI(elevator_b_model, floatToFixed(50, LEVEL_RENDER_SIZE), floatToFixed(50, LEVEL_RENDER_SIZE), floatToFixed(50, LEVEL_RENDER_SIZE));
 
     portal_orange_model = NE_ModelCreate(NE_Static);
     NE_ModelLoadStaticMesh(portal_orange_model, (u32 *)portal_bin);

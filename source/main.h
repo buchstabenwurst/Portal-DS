@@ -70,8 +70,6 @@ typedef struct
 
 typedef struct
 {
-	Vector3 position;
-	Vector3 rotation;
 	char* target;
 }pointTeleport;
 
@@ -118,8 +116,22 @@ typedef struct
 {
 	char* className;
 	char* targetName;
+	Vector3 position;
+	Vector3 rotation;
 	void* child;
 } Entity;
+
+typedef struct
+{
+	NE_Model* model;
+} Model;
+
+typedef struct
+{
+	int startSpeed;
+	Entity* nextNode;
+	bool isMoving;
+} funcTracktrain;
 
 typedef struct
 {
@@ -162,8 +174,12 @@ extern Keyboard *keyboard;
 
 // Call a Squirrel (ingame script language) function
 int callSquirrel(HSQUIRRELVM vm, const char* function);
-void registerEntity(char* className, char* targetName, void* entity);
+void registerEntity(char* className, char* targetName, void* entity, Vector3 position, Vector3 rotation);
+int findEntityByName(char* name, Entity** entity);
 int max(int __arg1, int __arg2);
 int min(int __arg1, int __arg2);
+void printfWarning(const char* message, ...);
+void printMemory(char* file, char* func, int line);
+int entFire(char* entityName,char *action, ...);
 
 #endif

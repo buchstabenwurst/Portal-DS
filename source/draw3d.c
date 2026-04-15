@@ -62,6 +62,14 @@ void renderPortals(void){
         if(level.portal[i].portaledPlane.plane == NULL)
             continue;
 
+        Vector2 texCoord0 = { 
+            .x=level.portal[i].portaledPlane.plane->x0,
+            .y=level.portal[i].portaledPlane.plane->y0
+            };
+        Vector2 texCoord1 = { 
+            .x=level.portal[i].portaledPlane.plane->x1,
+            .y=level.portal[i].portaledPlane.plane->y1
+            };
         RenderQuad(level.portal[i].portaledPlane.plane->vertex1, level.portal[i].portaledPlane.plane->vertex2, level.portal[i].portaledPlane.plane->vertex3, level.portal[i].portaledPlane.plane->vertex4, level.portal[i].portaledPlane.plane->material, level.portal[i].portaledPlane.plane->x0, level.portal[i].portaledPlane.plane->x1, level.portal[i].portaledPlane.plane->y0, level.portal[i].portaledPlane.plane->y1);
         
         // // make a pointer so it dosnt have to be "level.portal[i].portaledPlane.plane" evry time
@@ -183,6 +191,15 @@ void RenderPlanes(Level level) {
     }
 }
 
+void renderModels(){
+    Entity* elevatorEnt;
+    findEntityByName("Arrival_Logic-elevator_1_body", &elevatorEnt);
+    Model* elevator = (Model*)elevatorEnt->child;
+    // printf("%s\n", elevatorEnt->targetName);
+    NE_ModelSetCoordI(elevator_b_model, floatToFixed(elevatorEnt->position.x - localPlayer.position.x, LEVEL_RENDER_SIZE), floatToFixed(elevatorEnt->position.z - localPlayer.position.z, LEVEL_RENDER_SIZE), floatToFixed(elevatorEnt->position.y - localPlayer.position.y, LEVEL_RENDER_SIZE));
+    NE_ModelDraw(elevator_b_model);
+}
+
 void RenderDebug(void)
 {
     //print position and rotation
@@ -212,6 +229,7 @@ void Draw3DScene(void)
     NE_CameraUse(Camara);
 
     CameraMoveGlobal(Camara, localPlayer);
+    renderModels();
     renderPortals();
     RenderPlanes(level);
     RenderDebug();

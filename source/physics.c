@@ -1,6 +1,5 @@
 #include <NEMain.h>
 #include <math.h>
-#include <squirrel.h>
 #include "physics.h"
 #include "main.h"
 #include "load.h"
@@ -314,32 +313,21 @@ void doCollisions(void) {
             if (level.dynamicHitbxes[i] == j)
                 continue;
             //if too far away, skip
-            if (getDistance(level.allHitboxes[level.dynamicHitbxes[i]].position, level.allHitboxes[j].position) > 200)
+            if (getDistance(level.allHitboxes[level.dynamicHitbxes[i]].position, level.allHitboxes[j].position) > 1000)
                 continue;
             if (intersects(&level.allHitboxes[level.dynamicHitbxes[i]], &level.allHitboxes[j])) {
                 //printf("amogus");
                 if(level.allHitboxes[j].isTrigger){
                     if(level.allHitboxes[j].attachedTrigger->input){
-                        char script[64];
-                        char function[64];
+                        char entity[64];
                         char command[32];
-                        sscanf(level.allHitboxes[j].attachedTrigger->input, "%[^\x1B]\x1B%[^\x1B]", script, command); // "%[^\x1B]" is used like %s but the file format uses wierd seperators
-                        if(strcmp(command, "RunScriptCode") == 0){
-                            if(level.allHitboxes[j].attachedTrigger->mode == 1 && !level.allHitboxes[j].attachedTrigger->alreadyTriggered){ // if trigger_once & not already triggred
-                                sscanf(level.allHitboxes[j].attachedTrigger->input, "%*[^\x1B]\x1B%*[^\x1B]\x1B%[^\x1B]", function);
-                                function[strlen(function) - 2] = '\0'; // remove the "()"
-                                if(strcmp(function, "OnPostTransition") == 0){
-                                printf("calling funcion: %s\n", function);
-                                callSquirrel(squirrelvm, function);
-                                level.allHitboxes[j].attachedTrigger->alreadyTriggered = true;
-                                }
-                            }
-                            
-                        }
+                        char commandTarget[32] = "Placeholder";
+                        sscanf(level.allHitboxes[j].attachedTrigger->input, "%[^\x1B]\x1B%[^\x1B]\x1B%[^\x1B]", entity, command, commandTarget); // "%[^\x1B]" is used like %s but the file format uses wierd seperators
                         if(level.allHitboxes[j].attachedTrigger->mode == 1 && !level.allHitboxes[j].attachedTrigger->alreadyTriggered){ // if trigger_once & not already triggred
-                            printf("calling funcion: %s\n", level.allHitboxes[j].attachedTrigger->input);
                             level.allHitboxes[j].attachedTrigger->alreadyTriggered = true;
                             // TODO: call function
+                            // printf("%s\n",command);
+                            entFire(entity, command, commandTarget);
                         }
                     }
                 }
