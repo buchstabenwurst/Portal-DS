@@ -1,0 +1,2 @@
+# 4 bits of color index, Forced Transparency
+-gx -gb -pn16 -gB4 -gT! -pT1
