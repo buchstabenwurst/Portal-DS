@@ -555,13 +555,13 @@ int loadLevelBsp(char* levelName) {
 
     // Read Entitys
     fseek(levelFile, header.lumps[LUMP_ENTITIES].fileofs, SEEK_SET);
+    char word[256];
+    fpos_t fpos;
+    fpos_t fStartPos;
     while (1)
     {
-        char word[256];
         int res = fscanf(levelFile, "%s", word);
         tempPlane.isDrawn = 1;
-        fpos_t fpos;
-        fpos_t fStartPos;
         fgetpos(levelFile, &fpos);
         if (res == EOF || (long)fpos >= (header.lumps[LUMP_ENTITIES].fileofs + header.lumps[LUMP_ENTITIES].filelen)) {
             break; // EOF = End Of File. Quit the loop.
@@ -569,10 +569,11 @@ int loadLevelBsp(char* levelName) {
         if (strcmp(word, "{") == 0)
         {
             fgetpos(levelFile, &fStartPos);
-            
         }
+        // printf("%s\n", word);
         
         if (strcmp(word, "\"info_player_start\"") == 0){ // Read Player spawn
+            printMemory(__FILE__, __func__, __LINE__);
             // remember current cursor position
             fgetpos(levelFile, &fpos);
             // go to the position value
@@ -606,8 +607,9 @@ int loadLevelBsp(char* levelName) {
             printMemory(__FILE__, __func__, __LINE__);
         }
         if (strcmp(word, "\"trigger_once\"") == 0){ // Read Trigger_once
+            printMemory(__FILE__, __func__, __LINE__);
             char model[64];
-            int modelIndex;
+            int modelIndex=0;
             Vector3 position;
             char name[64], input[64];
             // remember current cursor position
@@ -619,7 +621,7 @@ int loadLevelBsp(char* levelName) {
                 fscanf(levelFile, "%s", word);
                 if(strcmp(word, "\"model\"") == 0){
                     fseek(levelFile, 1, SEEK_CUR);
-                    fscanf(levelFile, "%s", &model);
+                    fscanf(levelFile, "%s", model);
                     model[strlen(model) - 1] = 0; // remove the "
                     if(model[0] == '*'){
                         // remove the *
@@ -636,11 +638,11 @@ int loadLevelBsp(char* levelName) {
                 }
                 if(strcmp(word, "\"targetname\"") == 0){
                     fseek(levelFile, 1, SEEK_CUR);
-                    fscanf(levelFile, "%[^\"]", &name);
+                    fscanf(levelFile, "%[^\"]", name);
                 }else
                 if(strcmp(word, "\"OnStartTouch\"") == 0){
                     fseek(levelFile, 1, SEEK_CUR);
-                    fscanf(levelFile, "%[^\"]", &input);
+                    fscanf(levelFile, "%[^\"]", input);
                     // printf("%s\n",input);
                     break;
 
@@ -686,12 +688,13 @@ int loadLevelBsp(char* levelName) {
             printMemory(__FILE__, __func__, __LINE__);
         } 
         if (strcmp(word, "\"point_teleport\"") == 0){ // Read point_teleport
+            printMemory(__FILE__, __func__, __LINE__);
             // remember current cursor position
             fgetpos(levelFile, &fpos);
             // go to the position value
             fsetpos(levelFile, &fStartPos);
             Vector3 position, rotation;
-            char name[64], target[32];
+            char name[64], target[64];
             while(strcmp(word, "}"))
             {
                 fscanf(levelFile, "%s", word);
@@ -701,11 +704,11 @@ int loadLevelBsp(char* levelName) {
                 }else
                 if(strcmp(word, "\"targetname\"") == 0){
                     fseek(levelFile, 1, SEEK_CUR);
-                    fscanf(levelFile, "%[^\"]", &name);
+                    fscanf(levelFile, "%[^\"]", name);
                 }else
                 if(strcmp(word, "\"target\"") == 0){
                     fseek(levelFile, 1, SEEK_CUR);
-                    fscanf(levelFile, "%[^\"]", &target);
+                    fscanf(levelFile, "%[^\"]", target);
                 }else
                 if(strcmp(word, "\"angles\"") == 0){
                     fseek(levelFile, 1, SEEK_CUR);
@@ -729,12 +732,13 @@ int loadLevelBsp(char* levelName) {
             printMemory(__FILE__, __func__, __LINE__);
         }
         if (strcmp(word, "\"logic_script\"") == 0){ // Read logic_script
+            printMemory(__FILE__, __func__, __LINE__);
             // remember current cursor position
             fgetpos(levelFile, &fpos);
             // go to the position value
             fsetpos(levelFile, &fStartPos);
             Vector3 position, rotation;
-            char name[64], script[32];
+            char name[64], script[64];
             while(strcmp(word, "}"))
             {
                 fscanf(levelFile, "%s", word);
@@ -744,11 +748,11 @@ int loadLevelBsp(char* levelName) {
                 }else
                 if(strcmp(word, "\"targetname\"") == 0){
                     fseek(levelFile, 1, SEEK_CUR);
-                    fscanf(levelFile, "%[^\"]", &name);
+                    fscanf(levelFile, "%[^\"]", name);
                 }else
                 if(strcmp(word, "\"vscripts\"") == 0){
                     fseek(levelFile, 1, SEEK_CUR);
-                    fscanf(levelFile, "%[^\"]", &script);
+                    fscanf(levelFile, "%[^\"]", script);
                 }else
                 if(strcmp(word, "\"angles\"") == 0){
                     fseek(levelFile, 1, SEEK_CUR);
@@ -757,20 +761,21 @@ int loadLevelBsp(char* levelName) {
             }
             
             // load the script file
-            char* location = "nitro:/scripts/vscripts/";
-            snprintf(fileLocation, strlen(location)+strlen(script)+1, "%s%s", location, script);
+            char* scriptLocation = "nitro:/scripts/vscripts/";
+            char scriptFileLocation[strlen(scriptLocation) + strlen(script) + 1];
+            snprintf(scriptFileLocation, strlen(scriptLocation)+strlen(script)+1, "%s%s", scriptLocation, script);
             
             // check if file exists and load it
             FILE *file;
-            if ((file = fopen(fileLocation, "r")))
+            if ((file = fopen(scriptFileLocation, "r")) != NULL)
             {
                 fclose(file);
-                sqstd_dofile(squirrelvm, fileLocation, false, false);
+                sqstd_dofile(squirrelvm, scriptFileLocation, false, false);
     
                 char* namePermanent = malloc(sizeof(char) * (strlen(name) + 1));
                 strcpy(namePermanent, name);
     
-                // printf("\n\n%s\n\n\n",fileLocation);
+                // printf("\n\n%s\n\n\n",scriptFileLocation);
                 registerEntity("logic_script", namePermanent, NULL, position, rotation);
                 
             }
@@ -779,13 +784,14 @@ int loadLevelBsp(char* levelName) {
             printMemory(__FILE__, __func__, __LINE__);
         }
         if (strcmp(word, "\"func_tracktrain\"") == 0){ // Read func_tracktrain
+            printMemory(__FILE__, __func__, __LINE__);
             // remember current cursor position
             fgetpos(levelFile, &fpos);
             // go to the position value
             fsetpos(levelFile, &fStartPos);
             Vector3 position, rotation;
             int startSpeed;
-            char name[64], target[32];
+            char name[64], target[64];
             while(strcmp(word, "}"))
             {
                 fscanf(levelFile, "%s", word);
@@ -795,11 +801,11 @@ int loadLevelBsp(char* levelName) {
                 }else
                 if(strcmp(word, "\"targetname\"") == 0){
                     fseek(levelFile, 1, SEEK_CUR);
-                    fscanf(levelFile, "%[^\"]", &name);
+                    fscanf(levelFile, "%[^\"]", name);
                 }else
                 if(strcmp(word, "\"target\"") == 0){
                     fseek(levelFile, 1, SEEK_CUR);
-                    fscanf(levelFile, "%[^\"]", &target);
+                    fscanf(levelFile, "%[^\"]", target);
                 }else
                 if(strcmp(word, "\"angles\"") == 0){
                     fseek(levelFile, 1, SEEK_CUR);
@@ -807,7 +813,7 @@ int loadLevelBsp(char* levelName) {
                 }else
                 if(strcmp(word, "\"startspeed\"") == 0){
                     fseek(levelFile, 1, SEEK_CUR);
-                    fscanf(levelFile, "%d", startSpeed);
+                    fscanf(levelFile, "%d", &startSpeed);
                 }
             }
 
@@ -816,6 +822,9 @@ int loadLevelBsp(char* levelName) {
 
             funcTracktrain* entity = malloc(sizeof(funcTracktrain));
             entity->startSpeed = startSpeed;
+            char* targetPermanent = malloc(sizeof(char) * (strlen(target) + 1));
+            strcpy(targetPermanent, target);
+            entity->nextNodeStr = targetPermanent;
 
             registerEntity("func_tracktrain", namePermanent, entity, position, rotation);
             
@@ -824,12 +833,13 @@ int loadLevelBsp(char* levelName) {
             printMemory(__FILE__, __func__, __LINE__);
         }
         if (strcmp(word, "\"path_track\"") == 0){ // Read path_track
+            printMemory(__FILE__, __func__, __LINE__);
             // remember current cursor position
             fgetpos(levelFile, &fpos);
             // go to the position value
             fsetpos(levelFile, &fStartPos);
             Vector3 position, rotation;
-            char name[64], target[32];
+            char name[64], target[64];
             while(strcmp(word, "}"))
             {
                 fscanf(levelFile, "%s", word);
@@ -839,11 +849,11 @@ int loadLevelBsp(char* levelName) {
                 }else
                 if(strcmp(word, "\"targetname\"") == 0){
                     fseek(levelFile, 1, SEEK_CUR);
-                    fscanf(levelFile, "%[^\"]", &name);
+                    fscanf(levelFile, "%[^\"]", name);
                 }else
                 if(strcmp(word, "\"target\"") == 0){
                     fseek(levelFile, 1, SEEK_CUR);
-                    fscanf(levelFile, "%[^\"]", &target);
+                    fscanf(levelFile, "%[^\"]", target);
                 }else
                 if(strcmp(word, "\"angles\"") == 0){
                     fseek(levelFile, 1, SEEK_CUR);
@@ -854,13 +864,17 @@ int loadLevelBsp(char* levelName) {
             char* namePermanent = malloc(sizeof(char) * (strlen(name) + 1));
             strcpy(namePermanent, name);
 
-            registerEntity("path_track", namePermanent, NULL, position, rotation);
+            char* targetPermanent = malloc(sizeof(char) * (strlen(target) + 1));
+            strcpy(targetPermanent, target);
+
+            registerEntity("path_track", namePermanent, targetPermanent, position, rotation);
             
             // go to where we left off
             fsetpos(levelFile, &fpos);
             printMemory(__FILE__, __func__, __LINE__);
         }
         if (strcmp(word, "\"prop_dynamic\"") == 0){ // Read prop_dynamic
+            printMemory(__FILE__, __func__, __LINE__);
             // remember current cursor position
             fgetpos(levelFile, &fpos);
             // go to the position value
@@ -876,11 +890,11 @@ int loadLevelBsp(char* levelName) {
                 }else
                 if(strcmp(word, "\"targetname\"") == 0){
                     fseek(levelFile, 1, SEEK_CUR);
-                    fscanf(levelFile, "%[^\"]", &name);
+                    fscanf(levelFile, "%[^\"]", name);
                 }else
                 if(strcmp(word, "\"target\"") == 0){
                     fseek(levelFile, 1, SEEK_CUR);
-                    fscanf(levelFile, "%[^\"]", &target);
+                    fscanf(levelFile, "%[^\"]", target);
                 }else
                 if(strcmp(word, "\"angles\"") == 0){
                     fseek(levelFile, 1, SEEK_CUR);
@@ -888,7 +902,7 @@ int loadLevelBsp(char* levelName) {
                 }else
                 if(strcmp(word, "\"model\"") == 0){
                     fseek(levelFile, 1, SEEK_CUR);
-                    fscanf(levelFile, "%[^\"]", &model);
+                    fscanf(levelFile, "%[^\"]", model);
                 }
             }
 
